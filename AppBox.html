@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AppBox</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --accent:#ff6537;--accent2:#ff9636;--bg:#f5f6f8;--card:#fff;--text:#202124;
+  --muted:#777;--border:#ddd;--header1:#ff5b35;--header2:#ff9636;--footer:#211f31;
+}
+body.dark{
+  --bg:#111318;--card:#1b1e25;--text:#f3f4f6;--muted:#a8acb5;--border:#353943;
+  --header1:#20242b;--header2:#303640;--footer:#090b0f;
+}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text);transition:.25s}
+header{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,var(--header1),var(--header2));box-shadow:0 3px 14px #0003}
+.topbar{width:min(1180px,94%);margin:auto;display:flex;align-items:center;gap:12px;padding:15px 0;flex-wrap:wrap}
+.logo{font-size:29px;font-weight:900;color:#fff;cursor:pointer}
+.search{flex:1;min-width:210px;display:flex;background:#fff;border-radius:28px;overflow:hidden}
+.search input{flex:1;border:0;outline:0;padding:13px 17px;font-size:15px}
+.search button{border:0;background:#222;color:white;padding:0 20px;cursor:pointer}
+.lang,.themeBtn{border:0;border-radius:10px;padding:10px 12px;font-weight:700;cursor:pointer}
+.container{width:min(1180px,94%);margin:auto}
+.hero{margin:28px 0;background:linear-gradient(135deg,#202033,#53376d);border-radius:26px;padding:42px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.hero h1{font-size:42px;margin:0 0 12px}.hero p{color:#ddd;line-height:1.6;max-width:650px}.hero .emoji{font-size:100px}
+.btn{border:0;border-radius:11px;padding:12px 17px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.primary{background:var(--accent);color:white}.btn.dark{background:#222;color:#fff}.btn.light{background:#fff0ea;color:#e9562d}.btn.green{background:#19a75a;color:#fff}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:28px 0 15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
+.card,.panel,.detail,.comments,.project-box{background:var(--card)}
+.card{border-radius:19px;padding:16px;display:flex;gap:14px;align-items:center;box-shadow:0 5px 18px #0002;cursor:pointer;transition:.2s}
+.card:hover{transform:translateY(-4px);box-shadow:0 10px 25px #0004}
+.icon{width:76px;height:76px;border-radius:18px;object-fit:cover;background:#eee}
+.icon-fallback{width:76px;height:76px;border-radius:18px;background:linear-gradient(135deg,#ff6537,#ffad42);display:grid;place-items:center;font-size:35px;flex:none}
+.card h3{margin:0 0 7px}.meta{font-size:13px;color:var(--muted)}.stars{color:#f5a000;margin-top:5px}
+.badge{display:inline-block;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:800;background:#eceef2;color:#333;margin-top:6px}
+body.dark .badge{background:#30343c;color:#eee}
+.panel,.detail,.comments{border-radius:20px;padding:22px;box-shadow:0 5px 20px #0002;margin:20px 0}
+.panel label{display:block;font-weight:800;margin:13px 0 7px}
+.panel input,.panel textarea,.panel select,.comments textarea{
+  width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;background:var(--card);color:var(--text)
+}
+.link-row{display:grid;grid-template-columns:180px 1fr;gap:10px}
+.preview{width:110px;height:110px;border-radius:20px;object-fit:cover;margin-top:10px;display:none}
+.detail-top{display:grid;grid-template-columns:150px 1fr;gap:22px}.detail-icon{width:150px;height:150px;object-fit:cover;border-radius:28px;background:#eee}
+.detail-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}.heart{font-size:24px}.rating-row{display:flex;gap:7px;font-size:27px;cursor:pointer}.rating-row span{color:#ccc}.rating-row span.active{color:#f5a000}
+.download-links{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+.report-box{margin-top:18px;padding:15px;border:1px solid var(--border);border-radius:14px;background:var(--card)}
+.creator-box{margin-top:18px;padding:15px;border:1px dashed var(--border);border-radius:14px}
+.password-row{display:flex;gap:10px;flex-wrap:wrap}.password-row input{flex:1;min-width:200px}
+.delete-btn{background:#c62828!important;color:#fff!important}
+.report-box select{padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text)}
+.suspicion{margin-top:10px;font-size:13px;font-weight:800;color:#d45a28}
+.warning-modal{position:fixed;inset:0;background:#0009;display:flex;align-items:center;justify-content:center;z-index:100;padding:18px}
+.warning-card{width:min(460px,96%);background:var(--card);color:var(--text);border-radius:20px;padding:24px;box-shadow:0 20px 60px #0008}
+.warning-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px}
+.comment{padding:12px 0;border-bottom:1px solid var(--border)}.comment:last-child{border:0}
+.two-projects{display:grid;grid-template-columns:1fr 1fr;gap:16px}.project-box{border-radius:18px;padding:22px;text-align:center;box-shadow:0 5px 18px #0002}
+footer{margin-top:45px;background:var(--footer);color:#bbb;padding:34px 0;text-align:center}.developer{color:#fff;font-weight:800;margin-top:8px}
+.hidden{display:none!important}.back{margin:20px 0}
+@media(max-width:700px){.hero{padding:28px 22px}.hero h1{font-size:31px}.hero .emoji{display:none}.detail-top{grid-template-columns:1fr}.detail-icon{width:120px;height:120px}.two-projects{grid-template-columns:1fr}.link-row{grid-template-columns:1fr}}
+
+.share-sheet-overlay{
+  position:fixed;inset:0;background:#0009;z-index:200;
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.share-sheet{
+  width:min(620px,100%);
+  background:var(--card);color:var(--text);
+  border-radius:28px 28px 0 0;
+  box-shadow:0 -10px 40px #0006;
+  padding:20px 18px 28px;
+}
+.share-sheet-head{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:4px 4px 16px;border-bottom:1px solid var(--border);
+}
+.share-sheet-title{font-size:24px;font-weight:900}
+.share-sheet-sub{font-size:13px;color:var(--muted);margin-top:4px}
+.share-sheet-close{
+  border:0;background:transparent;color:var(--text);
+  font-size:18px;font-weight:800;cursor:pointer;padding:8px 10px
+}
+.share-targets{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:18px 10px;padding-top:22px;
+}
+.share-target{
+  border:0;background:transparent;color:var(--text);
+  cursor:pointer;text-align:center;font:inherit;
+}
+.share-icon{
+  width:64px;height:64px;border-radius:20px;margin:0 auto 8px;
+  display:grid;place-items:center;font-size:30px;
+  background:#eceef2;
+}
+body.dark .share-icon{background:#30343c}
+.share-label{font-size:13px;font-weight:700;line-height:1.2}
+@media(max-width:430px){
+  .share-targets{grid-template-columns:repeat(4,1fr);gap:16px 6px}
+  .share-icon{width:58px;height:58px;border-radius:18px;font-size:27px}
+  .share-label{font-size:12px}
+}
+
+
+.account-btn{margin-left:auto;border:0;border-radius:11px;padding:10px 14px;font-weight:800;cursor:pointer;background:#fff;color:#222}
+.profile-pill{display:flex;align-items:center;gap:8px;background:#fff;color:#222;border-radius:22px;padding:6px 10px;font-weight:800;cursor:pointer}
+.profile-pill img,.profile-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#ddd}
+.register-view{min-height:70vh;padding:20px 0}
+.register-card{width:min(560px,96%);margin:20px auto;background:var(--card);border-radius:22px;padding:24px;box-shadow:0 8px 28px #0002}
+.register-card label{display:block;font-weight:800;margin:14px 0 7px}
+.register-card input{width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;font:inherit;background:var(--card);color:var(--text)}
+.register-preview{width:90px;height:90px;border-radius:50%;object-fit:cover;margin-top:10px;display:none}
+.activity-row{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.activity-user{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:16px;background:#0000000d;font-size:12px}
+body.dark .activity-user{background:#ffffff12}
+.activity-user img{width:22px;height:22px;border-radius:50%;object-fit:cover}
+
+.creator-proof-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.admin-badge{display:inline-block;margin-top:8px;padding:6px 10px;border-radius:10px;background:#e8f5e9;color:#1b5e20;font-size:12px;font-weight:900}
+body.dark .admin-badge{background:#17351f;color:#9be3aa}
+.comment-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.comment-tools button{border:0;border-radius:8px;padding:7px 10px;font-weight:800;cursor:pointer}
+.comment-report-btn{background:#eceff1;color:#222}
+.comment-ban-btn{background:#c62828;color:#fff}
+</style>
+
+<style>
+/* itch.io-inspired AppBox skin */
+:root{
+  --accent:#fa5c5c;
+  --accent2:#e94b4b;
+  --bg:#f4f4f4;
+  --card:#ffffff;
+  --text:#222222;
+  --muted:#777777;
+  --border:#dedede;
+  --header1:#d94f4f;
+  --header2:#c63f3f;
+  --footer:#2b2b2b;
+}
+body{
+  background:#f4f4f4;
+  font-family:Arial,Helvetica,sans-serif;
+}
+body.dark{
+  --bg:#1e1e1e;
+  --card:#2b2b2b;
+  --text:#f5f5f5;
+  --muted:#b8b8b8;
+  --border:#444;
+  --header1:#b63e3e;
+  --header2:#8f3030;
+}
+header{
+  background:#d94f4f!important;
+  box-shadow:none!important;
+  border-bottom:1px solid #b73d3d;
+}
+.topbar{
+  width:min(1220px,96%);
+  padding:10px 0;
+  gap:10px;
+}
+.logo{
+  font-size:25px;
+  letter-spacing:-.5px;
+}
+.search{
+  border-radius:4px!important;
+  max-width:520px;
+  box-shadow:inset 0 0 0 1px #00000018;
+}
+.search input{
+  padding:10px 12px!important;
+}
+.search button{
+  background:#b83d3d!important;
+}
+.lang,.themeBtn,.account-btn{
+  border-radius:4px!important;
+}
+.container{
+  width:min(1220px,96%);
+}
+.hero{
+  margin:22px 0 18px;
+  background:#fff!important;
+  color:#222!important;
+  border-radius:4px!important;
+  padding:24px 26px!important;
+  box-shadow:0 1px 3px #0002!important;
+  border:1px solid #ddd;
+}
+body.dark .hero{
+  background:#2b2b2b!important;
+  color:#f5f5f5!important;
+  border-color:#444;
+}
+.hero h1{
+  font-size:32px!important;
+  margin-bottom:8px!important;
+}
+.hero p{
+  color:#666!important;
+  margin-bottom:14px;
+}
+body.dark .hero p{color:#bbb!important}
+.hero .emoji{font-size:70px!important}
+
+.section-head{
+  margin:18px 0 12px!important;
+}
+.section-head .btn{
+  border-radius:4px!important;
+  padding:9px 13px!important;
+}
+.btn{
+  border-radius:4px!important;
+}
+.btn.primary{
+  background:#fa5c5c!important;
+}
+.btn.dark{
+  background:#444!important;
+}
+.btn.light{
+  background:#f0f0f0!important;
+  color:#333!important;
+}
+body.dark .btn.light{
+  background:#3b3b3b!important;
+  color:#f3f3f3!important;
+}
+
+.grid{
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr))!important;
+  gap:14px!important;
+}
+.card{
+  display:block!important;
+  border-radius:4px!important;
+  padding:0!important;
+  overflow:hidden;
+  background:#fff!important;
+  border:1px solid #ddd;
+  box-shadow:0 1px 3px #00000018!important;
+  transition:.15s!important;
+}
+body.dark .card{
+  background:#2b2b2b!important;
+  border-color:#444;
+}
+.card:hover{
+  transform:translateY(-2px)!important;
+  box-shadow:0 4px 10px #0002!important;
+}
+.card .icon,
+.card .icon-fallback{
+  width:100%!important;
+  height:150px!important;
+  border-radius:0!important;
+  object-fit:cover;
+}
+.card > div:last-child{
+  padding:11px 12px 13px;
+}
+.card h3{
+  margin:0 0 6px!important;
+  font-size:16px;
+  color:var(--text);
+}
+.badge{
+  border-radius:3px!important;
+}
+
+.panel,.detail,.comments,.project-box,.register-card,.warning-card{
+  border-radius:4px!important;
+  box-shadow:0 1px 3px #0002!important;
+  border:1px solid var(--border);
+}
+.panel{
+  padding:18px!important;
+}
+.panel input,.panel textarea,.panel select,.comments textarea,.register-card input{
+  border-radius:4px!important;
+}
+.detail{
+  padding:18px!important;
+}
+.detail-icon{
+  border-radius:4px!important;
+}
+.creator-box,.report-box{
+  border-radius:4px!important;
+}
+.profile-pill{
+  border-radius:4px!important;
+}
+.profile-pill img,.profile-avatar{
+  border-radius:3px!important;
+}
+.share-sheet{
+  border-radius:6px 6px 0 0!important;
+}
+.share-icon{
+  border-radius:6px!important;
+}
+
+footer{
+  margin-top:30px!important;
+  padding:24px 0!important;
+}
+
+/* itch-style category strip */
+#itchCategoryBar{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:14px 0 18px;
+}
+#itchCategoryBar button{
+  border:1px solid #d8d8d8;
+  background:#fff;
+  color:#333;
+  padding:8px 11px;
+  border-radius:4px;
+  font-weight:700;
+  cursor:pointer;
+}
+body.dark #itchCategoryBar button{
+  background:#2b2b2b;
+  color:#eee;
+  border-color:#444;
+}
+#itchCategoryBar button:hover{
+  border-color:#fa5c5c;
+  color:#fa5c5c;
+}
+@media(max-width:700px){
+  .hero{padding:18px!important}
+  .hero h1{font-size:26px!important}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .card .icon,.card .icon-fallback{height:120px!important}
+}
+</style>
+
+</head>
+<body>
+<header>
+  <div class="topbar">
+    <div class="logo" onclick="showHome()">AppBox</div>
+    <div class="search">
+      <input id="searchInput" placeholder="Uygulama veya oyun ara...">
+      <button onclick="renderApps()" data-i18n="search">Ara</button>
+    </div>
+    <select class="lang" id="languageSelect" onchange="changeLanguage(this.value)">
+      <option value="tr">Türkçe</option>
+      <option value="en">English (US)</option>
+      <option value="ru">Русский</option>
+    </select>
+    <button class="themeBtn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+    <div id="accountArea"></div>
+  </div>
+</header>
+
+<main class="container">
+<section id="homeView">
+  <section class="hero">
+    <div>
+      <h1 data-i18n="heroTitle">Bağımsız oyunları ve uygulamaları keşfet 🎮</h1>
+      <p data-i18n="heroText">APK/XAPK/HTML dosyanı MediaFire, Dosya.co veya Google Drive'a yükle; bağlantısını buradan yayınla.</p>
+      <button class="btn primary" onclick="togglePublishPanel()" data-i18n="publishApp">Dosyanı Yayınla</button>
+    </div>
+    <div class="emoji">📱</div>
+  </section>
+
+<div id="itchCategoryBar">
+  <button onclick="setAppView('all')" data-i18n="catAll">🎮 Tüm Oyunlar</button>
+  <button onclick="setAppView('popular')" data-i18n="catPopular">🔥 Popüler</button>
+  <button onclick="setAppView('new')" data-i18n="catNew">✨ Yeni</button>
+  <button onclick="document.getElementById('publish').classList.toggle('hidden')" data-i18n="catPublish">⬆️ Yayınla</button>
+</div>
+
+  <div class="section-head" style="flex-wrap:wrap">
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button id="tabAll" class="btn primary" onclick="setAppView('all')" data-i18n="appsTitle">🔥 Uygulamalar ve Oyunlar</button>
+      <button id="tabPopular" class="btn dark" onclick="setAppView('popular')" data-i18n="popularTitle">🔥 Popüler</button>
+      <button id="tabNew" class="btn dark" onclick="setAppView('new')" data-i18n="newTitle">🆕 Yeni Çıkanlar</button>
+    </div>
+  </div>
+  <div id="appsGrid" class="grid"></div>
+
+  <section id="publish" class="panel hidden">
+    <h2 data-i18n="publishTitle">Dosyanı Yayınla</h2>
+    <p class="meta" data-i18n="publishInfo">Dosyayı AppBox'a yükleme. Harici bir servise yükle ve bağlantıları buraya ekle.</p>
+
+    <label data-i18n="appName">Uygulama / Oyun Adı</label>
+    <input id="appName" placeholder="Seçilmedi">
+
+    <label data-i18n="appType">İçerik türü</label>
+    <select id="appType" onchange="togglePublishType()">
+      <option value="" selected data-i18n="notSelected">Seçilmedi</option>
+      <option value="Game" data-i18n="typeGame">Oyun</option>
+      <option value="Application" data-i18n="typeApplication">Uygulama</option>
+      <option value="Browser Game" data-i18n="typeBrowserGame">Tarayıcı Oyunu</option>
+    </select>
+
+    <label data-i18n="chooseImage">Galeriden / hafızadan görsel seç</label>
+    <input id="iconFile" type="file" accept="image/*" onchange="previewImage(event)">
+    <img id="imagePreview" class="preview" alt="Preview">
+
+    <div id="downloadPublishFields">
+    <label data-i18n="platformLabel">Hangi platform için?</label>
+    <select id="platformType" onchange="updateFileTypes()">
+      <option value="Android">Android</option>
+      <option value="Windows">Windows</option>
+      <option value="Linux">Linux</option>
+      <option value="iOS/iPadOS">iOS / iPadOS</option>
+    </select>
+
+    <label data-i18n="fileType">Dosya türü</label>
+    <select id="fileType">
+      <option value="APK">APK</option>
+      <option value="XAPK">XAPK</option>
+      <option value="AAB">AAB</option>
+    </select>
+
+    <label data-i18n="description">Açıklama</label>
+    <textarea id="appDescription" rows="4" placeholder="Açıklama..." data-i18n-placeholder="descriptionPlaceholder"></textarea>
+
+    <h3 data-i18n="mainLink">Ana indirme linki</h3>
+    <div class="link-row">
+      <select id="service1">
+        <option value="MediaFire">MediaFire</option>
+        <option value="Dosya.co">Dosya.co</option>
+        <option value="Google Drive">Google Drive</option>
+        <option value="Yandex Disk">Yandex Disk</option>
+        <option value="Shortener">Shortener</option>
+        <option value="MEGA.nz">MEGA.nz</option>
+        <option value="Cloud Mail.Ru">Cloud Mail.Ru</option>
+      </select>
+      <input id="link1" type="url" placeholder="https://...">
+    </div>
+
+    <h3 data-i18n="backup1">Yedek link 1 (isteğe bağlı)</h3>
+    <div class="link-row">
+      <select id="service2">
+        <option value="" data-i18n="notSelected">Seçilmedi</option>
+        <option value="MediaFire">MediaFire</option>
+        <option value="Dosya.co">Dosya.co</option>
+        <option value="Google Drive">Google Drive</option>
+        <option value="Yandex Disk">Yandex Disk</option>
+        <option value="Shortener">Shortener</option>
+        <option value="MEGA.nz">MEGA.nz</option>
+        <option value="Cloud Mail.Ru">Cloud Mail.Ru</option>
+      </select>
+      <input id="link2" type="url" placeholder="https://...">
+    </div>
+
+    <h3 data-i18n="backup2">Yedek link 2 (isteğe bağlı)</h3>
+    <div class="link-row">
+      <select id="service3">
+        <option value="" data-i18n="notSelected">Seçilmedi</option>
+        <option value="MediaFire">MediaFire</option>
+        <option value="Dosya.co">Dosya.co</option>
+        <option value="Google Drive">Google Drive</option>
+        <option value="Yandex Disk">Yandex Disk</option>
+        <option value="Shortener">Shortener</option>
+        <option value="MEGA.nz">MEGA.nz</option>
+        <option value="Cloud Mail.Ru">Cloud Mail.Ru</option>
+      </select>
+      <input id="link3" type="url" placeholder="https://...">
+    </div>
+    </div>
+
+    <div id="browserGameFields" class="hidden">
+      <label data-i18n="htmlCode">HTML oyun kodu</label>
+      <textarea id="browserGameCode" rows="12" placeholder="<!DOCTYPE html> ..."></textarea>
+      <p class="meta" data-i18n="htmlCodeInfo">Browser Game seçildiğinde indirme linki yerine bu HTML kodu çalıştırılır.</p>
+    </div>
+
+    <div class="creator-box">
+      <h3 data-i18n="deletePermissionTitle">Silme izni</h3>
+      <label data-i18n="deletePermissionQuestion">Bu uygulama/oyun silinebilsin mi?</label>
+      <select id="allowDeleteWithoutPassword" onchange="toggleDeletePasswordFields()">
+        <option value="no" data-i18n="cannotDelete">Silinemesin</option>
+        <option value="yes" data-i18n="canDelete">Silinebilsin</option>
+      </select>
+
+      <div id="creatorPasswordFields" class="hidden" style="margin-top:14px">
+        <h3 data-i18n="creatorDeleteTitle">Silme şifresi (isteğe bağlı)</h3>
+        <p class="meta" data-i18n="creatorDeleteInfo">İstersen silme şifresi koy. Şifre koyarsan silmek için doğru şifre gerekir; koymazsan onayla silinebilir.</p>
+        <div class="password-row">
+          <input id="creatorPassword" type="password" autocomplete="new-password" placeholder="Harf ve sayı kullanın" data-i18n-placeholder="passwordPlaceholder">
+          <button type="button" class="btn dark" onclick="generateCreatorPassword()" data-i18n="generatePassword">Rastgele Şifre Oluştur</button>
+        </div>
+        <div id="generatedPasswordHint" class="meta" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+    <br>
+    <button class="btn primary" onclick="publishApp()" data-i18n="publishNow">Yayınla</button>
+  </section>
+
+  <section class="panel">
+    <h2 data-i18n="otherProjects">Yapımcının diğer projelerine göz at</h2>
+    <div class="two-projects">
+      <div class="project-box">
+        <h3>Pixelhub Games Store</h3>
+        <p data-i18n="pixelhubDesc">Developer, bu projedeki oyunları kendisi yapmıştır.</p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <a class="btn primary" target="_blank" rel="noopener noreferrer"
+             href="https://dosya.co/xum4qarstq63/Pixelhub_games_store.html.html">Dosya.co</a>
+          <a class="btn dark" target="_blank" rel="noopener noreferrer"
+             href="https://www.mediafire.com/file/bj4mdie94vmypwg/Pixelhub+games+store.html/file">MediaFire</a>
+        </div>
+      </div>
+
+      <div class="project-box">
+        <h3>PixelMods</h3>
+        <p data-i18n="pixelmodsDesc">Developer, bu projedeki oyun ve modları kendisi modlamış / hazırlamıştır.</p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <a class="btn primary" target="_blank" rel="noopener noreferrer"
+             href="https://dosya.co/guyxmqz4retx/PixelMods.html.html">Dosya.co</a>
+          <a class="btn dark" target="_blank" rel="noopener noreferrer"
+             href="https://www.mediafire.com/file/duwj92i7sc3f6pn/PixelMods.html/file">MediaFire</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="panel" style="text-align:center">
+    <h2 data-i18n="youtubeTitle">YouTube kanalıma abone ol ❤️</h2>
+    <a class="btn green" target="_blank" rel="noopener noreferrer" href="https://m.youtube.com/@sideflock17/shorts" data-i18n="subscribe">YouTube Kanalıma Git</a>
+  </section>
+</section>
+
+<section id="detailView" class="hidden">
+  <div class="back"><button class="btn dark" onclick="showHome()" data-i18n="back">← Geri</button></div>
+  <section class="detail">
+    <div class="detail-top">
+      <div id="detailIconWrap"></div>
+      <div>
+        <h1 id="detailName"></h1>
+        <div id="detailType" class="meta"></div>
+        <p id="detailDescription"></p>
+        <div class="detail-actions">
+          <button class="btn light heart" id="heartBtn" onclick="toggleHeart()">♡</button>
+        </div>
+        <div class="creator-proof-row">
+          <button class="btn dark" onclick="openCreatorProof()" data-i18n="proveCreator">🛡️ Yapımcı Olduğunu Kanıtla</button>
+          <span id="adminBadge" class="admin-badge hidden" data-i18n="youAreAdmin">Bu oyun/uygulamada adminsiniz</span>
+        </div>
+        <div id="downloadLinks" class="download-links"></div>
+        <div id="suspicionInfo" class="suspicion"></div>
+        <div id="activityInfo" class="activity-row"></div>
+
+        <div class="report-box">
+          <h3 data-i18n="reportTitle">Şikayet Et / Report</h3>
+          <select id="reportReason">
+            <option value="" data-i18n="notSelected">Seçilmedi</option>
+            <option value="broken" data-i18n="reasonBroken">Bozuk link</option>
+            <option value="notworking" data-i18n="reasonNotWorking">Çalışmıyor</option>
+            <option value="virus" data-i18n="reasonVirus">Virüs şüphesi</option>
+          </select>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px">
+            <button class="btn dark" onclick="reportCurrentApp()" data-i18n="reportBtn">Şikayet Gönder</button>
+            <button class="btn light" onclick="shareCurrentApp()" data-i18n="shareApp">🔗 Paylaş</button>
+            <button class="btn delete-btn" id="deleteBtn" onclick="startDeleteFlow()" title="Sil" aria-label="Sil" data-i18n-title="deleteApp" data-i18n-aria="deleteApp" style="font-size:20px;padding:9px 14px">🗑️</button>
+          </div>
+        </div>
+
+        <h3 data-i18n="rate">Yıldızla</h3>
+        <div class="rating-row" id="ratingRow">
+          <span onclick="rateApp(1)">★</span><span onclick="rateApp(2)">★</span><span onclick="rateApp(3)">★</span><span onclick="rateApp(4)">★</span><span onclick="rateApp(5)">★</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="comments">
+    <h2 data-i18n="comments">Yorumlar</h2>
+    <textarea id="commentText" rows="3" placeholder="Yorum yaz..."></textarea>
+    <br><br><button class="btn primary" onclick="addComment()" data-i18n="sendComment">Yorumu Gönder</button>
+    <div id="commentList"></div>
+  </section>
+</section>
+
+<section id="browserGameView" class="hidden" style="position:fixed;inset:0;background:#111;z-index:80">
+  <button onclick="showHome()" style="position:absolute;top:12px;left:12px;z-index:2;border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer" data-i18n="back">← Geri</button>
+  <iframe id="browserGameFrame"
+          style="position:absolute;left:0;top:0;width:100%;height:100%;border:0;background:#fff"
+          sandbox="allow-scripts allow-forms allow-pointer-lock allow-modals allow-popups allow-downloads">
+  </iframe>
+</section>
+
+
+<section id="registerView" class="hidden register-view">
+  <div class="back"><button class="btn dark" onclick="closeRegisterView()" data-i18n="back">← Geri</button></div>
+  <div class="register-card">
+    <h2 data-i18n="registerTitle">Kayıt Ol</h2>
+    <label data-i18n="registerName">Ad</label>
+    <input id="registerName" type="text" placeholder="Adını yaz" data-i18n-placeholder="namePlaceholder">
+    <label data-i18n="registerEmail">E-posta</label>
+    <input id="registerEmail" type="email" placeholder="ornek@mail.com">
+    <label data-i18n="profilePhoto">Profil fotoğrafı (isteğe bağlı)</label>
+    <input id="registerPhoto" type="file" accept="image/*" onchange="previewRegisterPhoto(event)">
+    <img id="registerPhotoPreview" class="register-preview" alt="Profil">
+    <br><br>
+    <button class="btn primary" onclick="registerAccount()" data-i18n="registerNow">Kayıt Ol</button>
+  </div>
+</section>
+
+</main>
+
+
+
+
+<div id="creatorProofModal" class="warning-modal hidden">
+  <div class="warning-card">
+    <h2 data-i18n="proveCreator">🛡️ Yapımcı Olduğunu Kanıtla</h2>
+    <p data-i18n="proveCreatorInfo">Yayınlayan hesabın kayıtlı e-postasını gir.</p>
+    <input id="creatorProofEmail" type="email"
+      style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text)"
+      placeholder="ornek@mail.com">
+    <div class="warning-actions">
+      <button class="btn dark" onclick="closeCreatorProof()" data-i18n="cancel">İptal</button>
+      <button class="btn primary" onclick="verifyCreatorEmail()" data-i18n="confirm">Tamam</button>
+    </div>
+  </div>
+</div>
+
+<div id="deleteConfirmModal" class="warning-modal hidden">
+  <div class="warning-card">
+    <h2 data-i18n="deleteConfirmTitle">🗑️ Emin misin?</h2>
+    <p data-i18n="deleteConfirmText">Bu uygulama/oyunu silme işlemine devam etmek istiyor musun?</p>
+    <div class="warning-actions">
+      <button class="btn dark" onclick="closeDeleteConfirm()" data-i18n="no">Hayır</button>
+      <button class="btn primary" onclick="showPasswordCheck()" data-i18n="yes">Evet</button>
+    </div>
+  </div>
+</div>
+
+<div id="passwordCheckModal" class="warning-modal hidden">
+  <div class="warning-card">
+    <h2 data-i18n="enterCreatorPassword">Yapımcı şifresini gir</h2>
+    <input id="deletePasswordInput" type="password" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text)" autocomplete="current-password">
+    <div class="warning-actions">
+      <button class="btn dark" onclick="closePasswordCheck()" data-i18n="cancel">İptal</button>
+      <button class="btn primary" onclick="verifyDeletePassword()" data-i18n="verify">Doğrula</button>
+    </div>
+  </div>
+</div>
+
+<div id="finalDeleteModal" class="warning-modal hidden">
+  <div class="warning-card">
+    <h2 data-i18n="creatorVerified">✅ Yapımcı doğrulandı</h2>
+    <p data-i18n="finalDeleteText">Bu uygulama/oyunu silmek istiyor musun?</p>
+    <div class="warning-actions">
+      <button class="btn dark" onclick="closeFinalDelete()" data-i18n="no">Hayır</button>
+      <button class="btn delete-btn" onclick="deleteCurrentApp()" data-i18n="yesDelete">Evet, Sil</button>
+    </div>
+  </div>
+</div>
+
+<div id="warningModal" class="warning-modal hidden">
+  <div class="warning-card">
+    <h2 data-i18n="warningTitle">⚠️ Şüpheli uygulama / oyun</h2>
+    <p id="warningText"></p>
+    <div class="warning-actions">
+      <button class="btn dark" onclick="closeWarning()" data-i18n="cancel">İptal</button>
+      <button class="btn primary" onclick="continueDownload()" data-i18n="continueAnyway">Yine de devam et</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="shareSheet" class="share-sheet-overlay hidden" onclick="shareSheetBackdrop(event)">
+  <div class="share-sheet">
+    <div class="share-sheet-head">
+      <div>
+        <div class="share-sheet-title" data-i18n="shareTitle">Paylaş</div>
+        <div id="shareSheetAppName" class="share-sheet-sub">AppBox</div>
+      </div>
+      <button class="share-sheet-close" onclick="closeShareSheet()" data-i18n="cancel">İptal</button>
+    </div>
+
+    <div class="share-targets">
+      <button class="share-target" onclick="shareViaWhatsApp()">
+        <div class="share-icon">🟢</div>
+        <div class="share-label">WhatsApp</div>
+      </button>
+
+      <button class="share-target" onclick="shareViaEmail()">
+        <div class="share-icon">✉️</div>
+        <div class="share-label" data-i18n="emailLabel">E-posta</div>
+      </button>
+
+      <button class="share-target" onclick="copyShareLink()">
+        <div class="share-icon">🔗</div>
+        <div class="share-label" data-i18n="copyLink">Bağlantıyı Kopyala</div>
+      </button>
+
+      <button class="share-target" onclick="shareViaTelegram()">
+        <div class="share-icon">✈️</div>
+        <div class="share-label">Telegram</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div>AppBox</div>
+  <div class="developer" data-i18n="developerCredit">Developer: Çınar Gülser</div>
+</footer>
+
+<script>
+const APPBOX_URL = "content://store/all_downloads/863";
+
+const translations={
+tr:{logout:"Oturumu Kapat",logoutConfirm:"Oturumu kapatmak istiyor musun?",proveCreator:"🛡️ Yapımcı Olduğunu Kanıtla",proveCreatorInfo:"Yayınlayan hesabın kayıtlı e-postasını gir.",confirm:"Tamam",publisherNotRegistered:"Bu oyun/uygulama kayıtlı bir hesap tarafından yayınlanmamış.",creatorVerifiedAdmin:"Yapımcı doğrulandı. Artık bu oyun/uygulamada adminsiniz.",creatorEmailWrong:"E-posta yayınlayan hesapla eşleşmiyor.",youAreAdmin:"Bu oyun/uygulamada adminsiniz",commentReport:"Şikayet Et",commentBan:"Banla",commentReported:"Kullanıcı şikayet edildi.",commentAlreadyReported:"Bu kullanıcıyı bu oyunda daha önce şikayet ettin.",userBanned:"Kullanıcı bu oyun/uygulamada banlandı.",bannedCannotComment:"Bu oyun/uygulamada yorum yapman engellenmiş.",platformLabel:"Hangi platform için?",registerTitle:"Kayıt Ol",registerName:"Ad",registerEmail:"E-posta",profilePhoto:"Profil fotoğrafı (isteğe bağlı)",registerNow:"Kayıt Ol",registerButton:"Kayıt Ol",loginRequired:"Bu işlemi yapmak için önce kayıt olmalısın.",visitedBy:"Ziyaret edenler",likedBy:"Kalp atanlar",ratedBy:"Yıldızlayanlar",commentedBy:"Yorum yapanlar",heroTitle:"Uygulamaları ve oyunları keşfet 🚀",popularTitle:"🔥 Popüler",newTitle:"🆕 Yeni Çıkanlar",heroText:"APK/XAPK/HTML dosyanı MediaFire, Dosya.co veya Google Drive'a yükle; bağlantısını buradan yayınla.",publishApp:"Dosyanı Yayınla",appsTitle:"🔥 Uygulamalar ve Oyunlar",publishTitle:"Dosyanı Yayınla",publishInfo:"Dosyayı AppBox'a yükleme. Harici bir servise yükle ve bağlantıları buraya ekle.",appName:"Uygulama / Oyun Adı",appType:"İçerik türü",fileType:"Dosya türü",description:"Açıklama",chooseImage:"Galeriden / hafızadan görsel seç",mainLink:"Ana indirme linki",backup1:"Yedek link 1 (isteğe bağlı)",backup2:"Yedek link 2 (isteğe bağlı)",publishNow:"Yayınla",otherProjects:"Yapımcının diğer projelerine göz at",dosyacoMissing:"Dosya.co bağlantısı paylaşılmamış.",youtubeTitle:"YouTube kanalıma abone ol ❤️",subscribe:"YouTube Kanalıma Git",back:"← Geri",rate:"Yıldızla",comments:"Yorumlar",sendComment:"Yorumu Gönder",search:"Ara",linkMissing:"Bu link paylaşılmamış.",fillRequired:"Ad, açıklama ve ana indirme linkini doldur.",published:"Uygulama yayınlandı.",commentPlaceholder:"Yorum yaz...",downloadFrom:"Şuradan indir",chooseBackupService:"Yedek link girdiysen önce servis seçmelisin.",reportTitle:"Şikayet Et / Report",reportBtn:"Şikayet Gönder",shareApp:"🔗 Paylaş",shareCopied:"AppBox bağlantısı panoya kopyalandı.",shareTitle:"Paylaş",copyLink:"Bağlantıyı Kopyala",reportChoose:"Şikayet sebebi seç.",reportThanks:"Şikayet kaydedildi. Şüphelilik puanı +1.",alreadyReported:"Bu uygulamayı bu cihazdan daha önce şikayet ettin.",suspicionPoints:"Şüphelilik puanı",warningTitle:"⚠️ Şüpheli uygulama / oyun",warningText:"Bu uygulama/oyun kullanıcı şikayetleri nedeniyle şüpheli görünüyor. İndirme bağlantısına devam etmek istiyor musun?",cancel:"İptal",continueAnyway:"Yine de devam et",creatorDeleteTitle:"Silme şifresi (isteğe bağlı)",creatorDeleteInfo:"İstersen silme şifresi koy. Şifre koyarsan silmek için doğru şifre gerekir; koymazsan onayla silinebilir.",deletePermissionTitle:"Silme izni",deletePermissionQuestion:"Bu uygulama/oyun silinebilsin mi?",generatePassword:"Rastgele Şifre Oluştur",deleteApp:"Sil",deleteConfirmTitle:"🗑️ Emin misin?",deleteConfirmText:"Bu uygulama/oyunu silme işlemine devam etmek istiyor musun?",yes:"Evet",no:"Hayır",enterCreatorPassword:"Yapımcı şifresini gir",verify:"Doğrula",wrongPassword:"Şifre yanlış.",creatorVerified:"✅ Yapımcı doğrulandı",finalDeleteText:"Yapımcı doğrulandı. Bu uygulama/oyunu silmek istiyor musun?",yesDelete:"Evet, Sil",deleted:"Uygulama/oyun silindi.",passwordRule:"Şifre en az 6 karakter olmalı ve harf ile sayı içermeli.",generatedPassword:"Oluşturulan şifre",noPasswordDeleteQuestion:"Şifre koymazsan bu uygulama/oyun silinebilsin mi?",cannotDelete:"Silinemesin",canDelete:"Silinebilsin",finalDeleteNoPassword:"Bu uygulama/oyun şifresiz silinebilir. Silmek istediğine emin misin?",htmlCode:"HTML oyun kodu",htmlCodeInfo:"Browser Game seçildiğinde indirme linki yerine bu HTML kodu çalıştırılır.",play:"Oyna",htmlRequired:"Browser Game için HTML oyun kodunu gir.",nameTypeRequired:"Uygulama/oyun adını ve içerik türünü seç.",passwordRequiredForDelete:"Silinebilsin seçtiysen bir silme şifresi girmelisin.",deleteNotAllowed:"Yayınlayan kişi bu uygulama/oyun için silme şifresi belirlememiş. Silinemez.",imageRequired:"Yayınlamak için galeriden bir görsel seçmelisin."},
+en:{logout:"Log Out",logoutConfirm:"Do you want to log out?",proveCreator:"🛡️ Prove You Are the Creator",proveCreatorInfo:"Enter the registered email of the publishing account.",confirm:"OK",publisherNotRegistered:"This app/game was not published by a registered account.",creatorVerifiedAdmin:"Creator verified. You are now an admin for this app/game.",creatorEmailWrong:"The email does not match the publishing account.",youAreAdmin:"You are an admin for this app/game",commentReport:"Report",commentBan:"Ban",commentReported:"User reported.",commentAlreadyReported:"You already reported this user in this app/game.",userBanned:"User banned from this app/game.",bannedCannotComment:"You are banned from commenting on this app/game.",platformLabel:"Which platform is it for?",registerTitle:"Register",registerName:"Name",registerEmail:"Email",profilePhoto:"Profile photo (optional)",registerNow:"Register",registerButton:"Register",loginRequired:"You must register before doing this.",visitedBy:"Visitors",likedBy:"Liked by",ratedBy:"Rated by",commentedBy:"Commented by",heroTitle:"Discover indie games and apps 🎮",popularTitle:"🔥 Popular",newTitle:"🆕 New Releases",heroText:"Upload your APK/XAPK/HTML file to MediaFire, Dosya.co, or Google Drive and publish the link here.",publishApp:"Publish App",appsTitle:"🔥 Apps & Games",publishTitle:"Publish App / Game",publishInfo:"Do not upload the file to AppBox. Upload it to an external service and add the links here.",appName:"App / Game Name",appType:"Content type",fileType:"File type",description:"Description",chooseImage:"Choose image from gallery / device",mainLink:"Main download link",backup1:"Backup link 1 (optional)",backup2:"Backup link 2 (optional)",publishNow:"Publish",otherProjects:"Check out the developer's other projects",dosyacoMissing:"Dosya.co link has not been shared.",youtubeTitle:"Subscribe to my YouTube channel ❤️",subscribe:"Visit My YouTube Channel",back:"← Back",rate:"Rate",comments:"Comments",sendComment:"Post Comment",search:"Search",linkMissing:"This link has not been shared.",fillRequired:"Enter the name, description, and main download link.",published:"App published.",commentPlaceholder:"Write a comment...",downloadFrom:"Download from",chooseBackupService:"If you enter a backup link, choose its service first.",reportTitle:"Report",reportBtn:"Submit Report",shareApp:"🔗 Share",shareCopied:"AppBox link copied to clipboard.",shareTitle:"Share",copyLink:"Copy Link",reportChoose:"Choose a report reason.",reportThanks:"Report saved. Suspicion score +1.",alreadyReported:"You already reported this app from this device.",suspicionPoints:"Suspicion score",warningTitle:"⚠️ Suspicious app / game",warningText:"This app/game looks suspicious because of user reports. Do you want to continue to the download link?",cancel:"Cancel",continueAnyway:"Continue anyway",creatorDeleteTitle:"Deletion password (optional)",creatorDeleteInfo:"You can optionally set a deletion password. With a password, deletion requires the correct password; without one, it can be deleted after confirmation.",deletePermissionTitle:"Deletion permission",deletePermissionQuestion:"Can this app/game be deleted?",generatePassword:"Generate Random Password",deleteApp:"Delete",deleteConfirmTitle:"🗑️ Are you sure?",deleteConfirmText:"Do you want to continue deleting this app/game?",yes:"Yes",no:"No",enterCreatorPassword:"Enter creator password",verify:"Verify",wrongPassword:"Incorrect password.",creatorVerified:"✅ Creator verified",finalDeleteText:"Creator verified. Do you want to delete this app/game?",yesDelete:"Yes, Delete",deleted:"App/game deleted.",passwordRule:"Password must be at least 6 characters and contain letters and numbers.",generatedPassword:"Generated password",noPasswordDeleteQuestion:"If you do not set a password, should this app/game be deletable?",cannotDelete:"Cannot be deleted",canDelete:"Can be deleted",finalDeleteNoPassword:"This app/game can be deleted without a password. Are you sure you want to delete it?",htmlCode:"HTML game code",htmlCodeInfo:"When Browser Game is selected, this HTML code runs instead of using download links.",play:"Play",htmlRequired:"Enter HTML game code for the Browser Game.",nameTypeRequired:"Enter the app/game name and choose the content type.",passwordRequiredForDelete:"If deletion is enabled, you must set a deletion password.",deleteNotAllowed:"The publisher did not set a deletion password for this app/game. It cannot be deleted.",imageRequired:"You must choose an image from your gallery/device before publishing."},
+ru:{logout:"Выйти",logoutConfirm:"Вы хотите выйти?",proveCreator:"🛡️ Подтвердить автора",proveCreatorInfo:"Введите зарегистрированный e-mail аккаунта, который опубликовал приложение/игру.",confirm:"ОК",publisherNotRegistered:"Это приложение/игра опубликовано без зарегистрированного аккаунта.",creatorVerifiedAdmin:"Автор подтвержден. Теперь вы администратор этого приложения/игры.",creatorEmailWrong:"E-mail не совпадает с аккаунтом автора.",youAreAdmin:"Вы администратор этого приложения/игры",commentReport:"Пожаловаться",commentBan:"Заблокировать",commentReported:"Пользователь пожалован.",commentAlreadyReported:"Вы уже жаловались на этого пользователя в этом приложении/игре.",userBanned:"Пользователь заблокирован в этом приложении/игре.",bannedCannotComment:"Вам запрещено комментировать это приложение/игру.",platformLabel:"Для какой платформы?",registerTitle:"Регистрация",registerName:"Имя",registerEmail:"Эл. почта",profilePhoto:"Фото профиля (необязательно)",registerNow:"Зарегистрироваться",registerButton:"Регистрация",loginRequired:"Сначала зарегистрируйтесь, чтобы выполнить это действие.",visitedBy:"Посетители",likedBy:"Поставили лайк",ratedBy:"Оценили",commentedBy:"Комментировали",heroTitle:"Откройте инди-игры и приложения 🎮",popularTitle:"🔥 Популярное",newTitle:"🆕 Новинки",heroText:"Загрузите APK/XAPK/HTML на MediaFire, Dosya.co или Google Drive и опубликуйте ссылку здесь.",publishApp:"Опубликовать",appsTitle:"🔥 Приложения и игры",publishTitle:"Опубликовать приложение / игру",publishInfo:"Не загружайте файл в AppBox. Загрузите его на внешний сервис и добавьте ссылки здесь.",appName:"Название приложения / игры",appType:"Тип контента",fileType:"Тип файла",description:"Описание",chooseImage:"Выбрать изображение из галереи / памяти",mainLink:"Основная ссылка",backup1:"Резервная ссылка 1 (необязательно)",backup2:"Резервная ссылка 2 (необязательно)",publishNow:"Опубликовать",otherProjects:"Посмотреть другие проекты разработчика",dosyacoMissing:"Ссылка Dosya.co не опубликована.",youtubeTitle:"Подпишитесь на мой YouTube-канал ❤️",subscribe:"Открыть YouTube-канал",back:"← Назад",rate:"Оценить",comments:"Комментарии",sendComment:"Отправить комментарий",search:"Поиск",linkMissing:"Эта ссылка не опубликована.",fillRequired:"Введите название, описание и основную ссылку.",published:"Приложение опубликовано.",commentPlaceholder:"Напишите комментарий...",downloadFrom:"Скачать через",chooseBackupService:"Если введена резервная ссылка, сначала выберите сервис.",reportTitle:"Пожаловаться",reportBtn:"Отправить жалобу",shareApp:"🔗 Поделиться",shareCopied:"Ссылка AppBox скопирована.",shareTitle:"Поделиться",copyLink:"Копировать ссылку",reportChoose:"Выберите причину жалобы.",reportThanks:"Жалоба сохранена. +1 к уровню подозрительности.",alreadyReported:"Вы уже жаловались на это приложение с этого устройства.",suspicionPoints:"Уровень подозрительности",warningTitle:"⚠️ Подозрительное приложение / игра",warningText:"Это приложение/игра выглядит подозрительно из-за жалоб пользователей. Продолжить переход к ссылке загрузки?",cancel:"Отмена",continueAnyway:"Все равно продолжить",creatorDeleteTitle:"Пароль удаления (необязательно)",creatorDeleteInfo:"Можно задать пароль удаления. С паролем для удаления потребуется правильный пароль; без пароля удаление возможно после подтверждения.",deletePermissionTitle:"Разрешение на удаление",deletePermissionQuestion:"Можно ли удалить это приложение/игру?",generatePassword:"Создать случайный пароль",deleteApp:"Удалить",deleteConfirmTitle:"🗑️ Вы уверены?",deleteConfirmText:"Продолжить удаление приложения/игры?",yes:"Да",no:"Нет",enterCreatorPassword:"Введите пароль разработчика",verify:"Проверить",wrongPassword:"Неверный пароль.",creatorVerified:"✅ Разработчик подтвержден",finalDeleteText:"Разработчик подтвержден. Удалить приложение/игру?",yesDelete:"Да, удалить",deleted:"Приложение/игра удалено.",passwordRule:"Пароль должен содержать не менее 6 символов, буквы и цифры.",generatedPassword:"Созданный пароль",noPasswordDeleteQuestion:"Если пароль не задан, можно ли удалить это приложение/игру?",cannotDelete:"Нельзя удалить",canDelete:"Можно удалить",finalDeleteNoPassword:"Это приложение/игру можно удалить без пароля. Вы уверены, что хотите удалить?",htmlCode:"HTML-код игры",htmlCodeInfo:"При выборе Browser Game этот HTML-код запускается вместо ссылок для скачивания.",play:"Играть",htmlRequired:"Введите HTML-код для Browser Game.",nameTypeRequired:"Введите название приложения/игры и выберите тип контента.",passwordRequiredForDelete:"Если удаление разрешено, необходимо задать пароль удаления.",deleteNotAllowed:"Автор не установил пароль удаления для этого приложения/игры. Удаление невозможно.",imageRequired:"Перед публикацией необходимо выбрать изображение из галереи/памяти."}
+};
+
+let lang=localStorage.getItem("appboxLang")||"tr";
+let theme=localStorage.getItem("appboxTheme")||"light";
+let selectedImageData="";
+let registerPhotoData="";
+let currentUser=JSON.parse(localStorage.getItem("appboxUser")||"null");
+
+let publisherId=localStorage.getItem("appboxPublisherId");
+if(!publisherId){
+  if(window.crypto && crypto.randomUUID){
+    publisherId=crypto.randomUUID();
+  }else{
+    publisherId="pub_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+  }
+  localStorage.setItem("appboxPublisherId",publisherId);
+}
+localStorage.setItem("appboxAppsV3","[]");
+let apps=[];
+let currentAppId=null;
+let currentAppView="all";
+
+Object.assign(translations.tr,{"heroTitle": "Bağımsız oyunları ve uygulamaları keşfet 🎮", "catAll": "🎮 Tüm Oyunlar", "catPopular": "🔥 Popüler", "catNew": "✨ Yeni", "catPublish": "⬆️ Yayınla", "notSelected": "Seçilmedi", "typeGame": "Oyun", "typeApplication": "Uygulama", "typeBrowserGame": "Tarayıcı Oyunu", "descriptionPlaceholder": "Açıklama...", "passwordPlaceholder": "Harf ve sayı kullanın", "namePlaceholder": "Adını yaz", "pixelhubDesc": "Developer, bu projedeki oyunları kendisi yapmıştır.", "pixelmodsDesc": "Developer, bu projedeki oyun ve modları kendisi modlamış / hazırlamıştır.", "reasonBroken": "Bozuk link", "reasonNotWorking": "Çalışmıyor", "reasonVirus": "Virüs şüphesi", "emailLabel": "E-posta", "developerCredit": "Developer: Çınar Gülser", "invalidAccount": "Ad ve geçerli bir e-posta gir.", "shareMessage": "AppBox'ta bu oyun/uygulamaya göz at:", "copyPrompt": "Bağlantıyı kopyala:"});
+Object.assign(translations.en,{"heroTitle": "Discover indie games and apps 🎮", "catAll": "🎮 All Games", "catPopular": "🔥 Popular", "catNew": "✨ New", "catPublish": "⬆️ Publish", "notSelected": "Not selected", "typeGame": "Game", "typeApplication": "Application", "typeBrowserGame": "Browser Game", "descriptionPlaceholder": "Description...", "passwordPlaceholder": "Use letters and numbers", "namePlaceholder": "Enter your name", "pixelhubDesc": "The developer created the games in this project.", "pixelmodsDesc": "The developer personally modded / prepared the games and mods in this project.", "reasonBroken": "Broken link", "reasonNotWorking": "Not working", "reasonVirus": "Virus suspicion", "emailLabel": "Email", "developerCredit": "Developer: Çınar Gülser", "invalidAccount": "Enter a name and a valid email address.", "shareMessage": "Check out this game/app on AppBox:", "copyPrompt": "Copy the link:"});
+Object.assign(translations.ru,{"heroTitle": "Откройте инди-игры и приложения 🎮", "catAll": "🎮 Все игры", "catPopular": "🔥 Популярное", "catNew": "✨ Новое", "catPublish": "⬆️ Опубликовать", "notSelected": "Не выбрано", "typeGame": "Игра", "typeApplication": "Приложение", "typeBrowserGame": "Браузерная игра", "descriptionPlaceholder": "Описание...", "passwordPlaceholder": "Используйте буквы и цифры", "namePlaceholder": "Введите имя", "pixelhubDesc": "Разработчик сам создал игры в этом проекте.", "pixelmodsDesc": "Разработчик сам модифицировал / подготовил игры и моды в этом проекте.", "reasonBroken": "Нерабочая ссылка", "reasonNotWorking": "Не работает", "reasonVirus": "Подозрение на вирус", "emailLabel": "Эл. почта", "developerCredit": "Разработчик: Çınar Gülser", "invalidAccount": "Введите имя и действительный адрес электронной почты.", "shareMessage": "Посмотрите эту игру/приложение в AppBox:", "copyPrompt": "Скопируйте ссылку:"});
+
+function t(k){return translations[lang][k]||k}
+function typeLabel(v){
+ if(v==="Game")return t("typeGame");
+ if(v==="Application")return t("typeApplication");
+ if(v==="Browser Game")return t("typeBrowserGame");
+ return v||"";
+}
+
+function saveApps(){localStorage.setItem("appboxAppsV3",JSON.stringify(apps))}
+function escapeHtml(v){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+
+
+function requireAccount(){
+ if(currentUser)return true;
+ alert(t("loginRequired"));
+ openRegisterView();
+ return false;
+}
+
+function renderAccountArea(){
+ const area=document.getElementById("accountArea");
+ if(!area)return;
+ if(currentUser){
+   const avatar=currentUser.photo
+     ? `<img src="${currentUser.photo}" alt="">`
+     : `<div class="profile-avatar" style="display:grid;place-items:center">👤</div>`;
+   area.innerHTML=`<div style="display:flex;align-items:center;gap:8px">
+      <div class="profile-pill" onclick="openRegisterView()">${avatar}<span>${escapeHtml(currentUser.name)}</span></div>
+      <button class="themeBtn" onclick="logoutAccount()" title="${t("logout")}">🚪 ${t("logout")}</button>
+    </div>`;
+ }else{
+   area.innerHTML=`<button class="account-btn" onclick="openRegisterView()">${t("registerButton")}</button>`;
+ }
+}
+
+function logoutAccount(){
+ if(!currentUser)return;
+ if(!confirm(t("logoutConfirm")))return;
+ currentUser=null;
+ registerPhotoData="";
+ localStorage.removeItem("appboxUser");
+ renderAccountArea();
+ showHome();
+}
+
+function openRegisterView(){
+ document.getElementById("homeView").classList.add("hidden");
+ document.getElementById("detailView").classList.add("hidden");
+ const game=document.getElementById("browserGameView");
+ if(game)game.classList.add("hidden");
+ document.getElementById("registerView").classList.remove("hidden");
+
+ if(currentUser){
+   document.getElementById("registerName").value=currentUser.name||"";
+   document.getElementById("registerEmail").value=currentUser.email||"";
+   registerPhotoData=currentUser.photo||"";
+   const p=document.getElementById("registerPhotoPreview");
+   if(registerPhotoData){p.src=registerPhotoData;p.style.display="block"}else{p.style.display="none"}
+ }else{
+   document.getElementById("registerName").value="";
+   document.getElementById("registerEmail").value="";
+   registerPhotoData="";
+   document.getElementById("registerPhotoPreview").style.display="none";
+ }
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function closeRegisterView(){
+ document.getElementById("registerView").classList.add("hidden");
+ showHome();
+}
+
+function previewRegisterPhoto(event){
+ const file=event.target.files[0];
+ if(!file)return;
+ if(!file.type.startsWith("image/"))return;
+ const reader=new FileReader();
+ reader.onload=e=>{
+   registerPhotoData=e.target.result;
+   const p=document.getElementById("registerPhotoPreview");
+   p.src=registerPhotoData;
+   p.style.display="block";
+ };
+ reader.readAsDataURL(file);
+}
+
+function registerAccount(){
+ const name=document.getElementById("registerName").value.trim();
+ const email=document.getElementById("registerEmail").value.trim();
+ if(!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+   alert(t("invalidAccount"));
+   return;
+ }
+ currentUser={
+   id:(currentUser&&currentUser.id)?currentUser.id:("user_"+Date.now()+"_"+Math.random().toString(36).slice(2)),
+   name:name,
+   email:email,
+   photo:registerPhotoData||""
+ };
+ localStorage.setItem("appboxUser",JSON.stringify(currentUser));
+ renderAccountArea();
+ document.getElementById("registerView").classList.add("hidden");
+ showHome();
+}
+
+function publicUser(){
+ return currentUser?{id:currentUser.id,name:currentUser.name,photo:currentUser.photo||""}:null;
+}
+
+function renderActivity(){
+ const app=getCurrent();
+ const box=document.getElementById("activityInfo");
+ if(!box||!app)return;
+ const groups=[
+   [t("visitedBy"),app.visitorUsers||[]],
+   [t("likedBy"),app.likedUsers||[]],
+   [t("ratedBy"),app.ratedUsers||[]],
+   [t("commentedBy"),app.commentUsers||[]]
+ ];
+ box.innerHTML=groups.map(([label,arr])=>{
+   if(!arr.length)return "";
+   const people=arr.slice(-6).map(u=>{
+     const av=u.photo?`<img src="${u.photo}" alt="">`:"👤";
+     return `<span class="activity-user">${av}<span>${escapeHtml(u.name)}</span></span>`;
+   }).join("");
+   return `<div style="width:100%"><div class="meta" style="font-weight:800">${label}</div><div class="activity-row">${people}</div></div>`;
+ }).join("");
+}
+
+
+function applyTheme(){
+ document.body.classList.toggle("dark",theme==="dark");
+ document.getElementById("themeBtn").textContent=theme==="dark"?"☀️":"🌙";
+}
+function toggleTheme(){
+ theme=theme==="dark"?"light":"dark";
+ localStorage.setItem("appboxTheme",theme);applyTheme();
+}
+
+function changeLanguage(v){
+ lang=v;localStorage.setItem("appboxLang",lang);
+ document.documentElement.lang=lang==="en"?"en-US":lang;
+ document.querySelectorAll("[data-i18n]").forEach(el=>el.textContent=t(el.dataset.i18n));
+ document.querySelectorAll("[data-i18n-placeholder]").forEach(el=>el.placeholder=t(el.dataset.i18nPlaceholder));
+ document.querySelectorAll("[data-i18n-title]").forEach(el=>el.title=t(el.dataset.i18nTitle));
+ document.querySelectorAll("[data-i18n-aria]").forEach(el=>el.setAttribute("aria-label",t(el.dataset.i18nAria)));
+ document.getElementById("searchInput").placeholder=lang==="en"?"Search apps or games...":lang==="ru"?"Поиск приложений или игр...":"Uygulama veya oyun ara...";
+ document.getElementById("commentText").placeholder=t("commentPlaceholder");
+ renderApps();
+ if(currentAppId){renderDownloadLinks();renderActivity();updateAdminBadge();renderComments();}
+ renderAccountArea();
+}
+
+
+function togglePublishPanel(){
+ const panel=document.getElementById("publish");
+ const willOpen=panel.classList.contains("hidden");
+ panel.classList.toggle("hidden");
+ if(willOpen){
+   setTimeout(()=>panel.scrollIntoView({behavior:"smooth",block:"start"}),50);
+ }
+}
+
+function updateFileTypes(){
+ const platform=document.getElementById("platformType");
+ const fileType=document.getElementById("fileType");
+ if(!platform||!fileType)return;
+
+ const options={
+   "Android":["APK","XAPK","AAB"],
+   "Windows":["MSI","EXE"],
+   "Linux":["DEB","APT"],
+   "iOS/iPadOS":["IPA"]
+ };
+ fileType.innerHTML=(options[platform.value]||["APK"]).map(x=>`<option value="${x}">${x}</option>`).join("");
+}
+
+function togglePublishType(){
+ const type=document.getElementById("appType").value;
+ const isBrowser=type==="Browser Game";
+ document.getElementById("downloadPublishFields").classList.toggle("hidden",isBrowser);
+ document.getElementById("browserGameFields").classList.toggle("hidden",!isBrowser);
+}
+
+function previewImage(event){
+ const file=event.target.files[0];
+ if(!file)return;
+ if(!file.type.startsWith("image/")){alert("Image only");return}
+ const reader=new FileReader();
+ reader.onload=e=>{
+   selectedImageData=e.target.result;
+   const img=document.getElementById("imagePreview");
+   img.src=selectedImageData;img.style.display="block";
+ };
+ reader.readAsDataURL(file);
+}
+
+
+async function sha256(text){
+ const data=new TextEncoder().encode(text);
+ const hash=await crypto.subtle.digest("SHA-256",data);
+ return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+function toggleDeletePasswordFields(){
+ const canDelete=document.getElementById("allowDeleteWithoutPassword").value==="yes";
+ const fields=document.getElementById("creatorPasswordFields");
+ fields.classList.toggle("hidden",!canDelete);
+ if(!canDelete){
+   document.getElementById("creatorPassword").value="";
+   document.getElementById("generatedPasswordHint").textContent="";
+ }
+}
+
+function generateCreatorPassword(){
+ const chars="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+ let p="";
+ if(window.crypto && crypto.getRandomValues){
+   const arr=new Uint32Array(12);crypto.getRandomValues(arr);
+   for(const n of arr)p+=chars[n%chars.length];
+ }else{
+   for(let i=0;i<12;i++)p+=chars[Math.floor(Math.random()*chars.length)];
+ }
+ document.getElementById("creatorPassword").value=p;
+ document.getElementById("generatedPasswordHint").textContent=t("generatedPassword")+": "+p;
+ toggleDeletePasswordFields();
+}
+
+
+function normalizeEmail(v){return String(v||"").trim().toLowerCase()}
+
+function isCurrentUserAdmin(app){
+ return !!(currentUser && app && Array.isArray(app.adminUserIds) && app.adminUserIds.includes(currentUser.id));
+}
+
+function updateAdminBadge(){
+ const app=getCurrent();
+ const badge=document.getElementById("adminBadge");
+ if(!badge)return;
+ badge.classList.toggle("hidden",!isCurrentUserAdmin(app));
+}
+
+function openCreatorProof(){
+ if(!requireAccount())return;
+ const app=getCurrent();if(!app)return;
+ if(!app.publisherEmailHash){
+   alert(t("publisherNotRegistered"));
+   return;
+ }
+ document.getElementById("creatorProofEmail").value="";
+ document.getElementById("creatorProofModal").classList.remove("hidden");
+}
+
+function closeCreatorProof(){
+ document.getElementById("creatorProofModal").classList.add("hidden");
+ document.getElementById("creatorProofEmail").value="";
+}
+
+async function verifyCreatorEmail(){
+ if(!requireAccount())return;
+ const app=getCurrent();if(!app)return;
+ if(!app.publisherEmailHash){
+   closeCreatorProof();
+   alert(t("publisherNotRegistered"));
+   return;
+ }
+ const entered=normalizeEmail(document.getElementById("creatorProofEmail").value);
+ if(!entered)return;
+ const enteredHash=await sha256(entered);
+ if(enteredHash!==app.publisherEmailHash){
+   alert(t("creatorEmailWrong"));
+   return;
+ }
+ app.adminUserIds=app.adminUserIds||[];
+ if(!app.adminUserIds.includes(currentUser.id))app.adminUserIds.push(currentUser.id);
+ saveApps();
+ closeCreatorProof();
+ updateAdminBadge();
+ renderComments();
+ alert(t("creatorVerifiedAdmin"));
+}
+
+function reportCommentUser(targetUserId){
+ if(!requireAccount())return;
+ const app=getCurrent();if(!app || !targetUserId)return;
+ if(targetUserId===currentUser.id)return;
+
+ app.commentUserReports=app.commentUserReports||{};
+ const key=currentUser.id+"__"+targetUserId;
+ if(app.commentUserReports[key]){
+   alert(t("commentAlreadyReported"));
+   return;
+ }
+ app.commentUserReports[key]=true;
+ app.commentUserReportCounts=app.commentUserReportCounts||{};
+ app.commentUserReportCounts[targetUserId]=(app.commentUserReportCounts[targetUserId]||0)+1;
+ saveApps();
+ renderComments();
+ alert(t("commentReported"));
+}
+
+function banCommentUser(targetUserId){
+ if(!requireAccount())return;
+ const app=getCurrent();if(!app || !isCurrentUserAdmin(app) || !targetUserId)return;
+ if(targetUserId===currentUser.id)return;
+
+ app.bannedUserIds=app.bannedUserIds||[];
+ if(!app.bannedUserIds.includes(targetUserId))app.bannedUserIds.push(targetUserId);
+
+ // Remove existing comments from the banned user.
+ app.comments=(app.comments||[]).filter(c=>!(c.user && c.user.id===targetUserId));
+ app.commentUsers=(app.commentUsers||[]).filter(u=>u.id!==targetUserId);
+
+ saveApps();
+ renderComments();
+ renderActivity();
+ alert(t("userBanned"));
+}
+
+async function publishApp(){
+ const name=document.getElementById("appName").value.trim();
+ const type=document.getElementById("appType").value;
+ const fileType=document.getElementById("fileType").value;
+ const platform=document.getElementById("platformType").value;
+ const description=document.getElementById("appDescription").value.trim();
+ const browserGameCode=document.getElementById("browserGameCode").value.trim();
+ const creatorPassword=document.getElementById("creatorPassword").value.trim();
+ if(!selectedImageData){alert(t("imageRequired"));return;}
+ const allowDeleteWithoutPassword=false;
+ const wantsDelete=document.getElementById("allowDeleteWithoutPassword").value==="yes";
+ if(wantsDelete && !creatorPassword){
+   alert(t("passwordRequiredForDelete"));return;
+ }
+ if(creatorPassword && (!/[A-Za-z]/.test(creatorPassword) || !/[0-9]/.test(creatorPassword) || creatorPassword.length<6)){
+   alert(t("passwordRule"));return;
+ }
+ const creatorPasswordHash=creatorPassword ? await sha256(creatorPassword) : "";
+ const publisherEmailHash=currentUser ? await sha256(normalizeEmail(currentUser.email)) : "";
+ const publisherUserId=currentUser ? currentUser.id : "";
+
+ const values=[
+  {service:document.getElementById("service1").value,url:document.getElementById("link1").value.trim()},
+  {service:document.getElementById("service2").value,url:document.getElementById("link2").value.trim()},
+  {service:document.getElementById("service3").value,url:document.getElementById("link3").value.trim()}
+ ];
+ const isBrowserGame=type==="Browser Game";
+ if(!name||!type){alert(t("nameTypeRequired"));return}
+ if(isBrowserGame){
+   if(!browserGameCode){alert(t("htmlRequired"));return}
+ }else{
+   if(values[1].url && !values[1].service){ alert(t("chooseBackupService")); return; }
+   if(values[2].url && !values[2].service){ alert(t("chooseBackupService")); return; }
+   if(!description||!values[0].url){alert(t("fillRequired"));return}
+ }
+ const links=isBrowserGame ? [] : values.filter(x=>x.url);
+ if(!isBrowserGame && links.some(x=>!/^https?:\/\//i.test(x.url))){alert(t("fillRequired"));return}
+
+ apps.unshift({id:Date.now(),publishedAt:Date.now(),publisherEmailHash,publisherUserId,adminUserIds:[],bannedUserIds:[],commentUserReports:{},commentUserReportCounts:{},name,type,platform:isBrowserGame?"Browser":platform,fileType:isBrowserGame?"HTML":fileType,description,image:selectedImageData,links,browserGameCode:isBrowserGame?browserGameCode:"",hearts:0,visits:0,liked:false,rating:0,comments:[],suspicionPoints:0,creatorPasswordHash,allowDeleteWithoutPassword});
+ saveApps();renderApps();
+
+ ["appName","appDescription","link1","link2","link3"].forEach(id=>document.getElementById(id).value="");
+ document.getElementById("appType").value="";
+ document.getElementById("service2").value="";
+ document.getElementById("service3").value="";
+ document.getElementById("iconFile").value="";
+ document.getElementById("creatorPassword").value="";
+ document.getElementById("browserGameCode").value="";
+ document.getElementById("allowDeleteWithoutPassword").value="no";
+ document.getElementById("generatedPasswordHint").textContent="";
+ toggleDeletePasswordFields();
+ togglePublishType();
+ document.getElementById("imagePreview").style.display="none";
+ selectedImageData="";
+ alert(t("published"));
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function setAppView(view){
+ currentAppView=view;
+ const all=document.getElementById("tabAll");
+ const popular=document.getElementById("tabPopular");
+ const fresh=document.getElementById("tabNew");
+ [all,popular,fresh].forEach(b=>{if(b){b.classList.remove("primary");b.classList.add("dark")}});
+ const active=view==="popular"?popular:view==="new"?fresh:all;
+ if(active){active.classList.remove("dark");active.classList.add("primary")}
+ renderApps();
+}
+
+function renderApps(){
+ const q=document.getElementById("searchInput").value.toLowerCase().trim();
+ const grid=document.getElementById("appsGrid");
+ grid.innerHTML="";
+
+ let list=apps.filter(a=>(a.name||"").toLowerCase().includes(q)||(a.description||"").toLowerCase().includes(q));
+
+ if(currentAppView==="popular"){
+   list=list.slice().sort((a,b)=>{
+     const scoreA=(a.hearts||0)*10+(a.visits||0);
+     const scoreB=(b.hearts||0)*10+(b.visits||0);
+     return scoreB-scoreA || (b.hearts||0)-(a.hearts||0) || (b.visits||0)-(a.visits||0);
+   });
+ }else if(currentAppView==="new"){
+   const tenDays=10*24*60*60*1000;
+   const now=Date.now();
+   list=list.filter(a=>now-(a.publishedAt||a.id||0) <= tenDays)
+            .sort((a,b)=>(b.publishedAt||b.id||0)-(a.publishedAt||a.id||0));
+ }
+
+ list.forEach(app=>{
+   const c=document.createElement("div");
+   c.className="card";
+   c.onclick=()=>openApp(app.id);
+   const icon=app.image?`<img class="icon" src="${app.image}">`:`<div class="icon-fallback">📱</div>`;
+   c.innerHTML=`${icon}<div><h3>${escapeHtml(app.name)}</h3><div class="meta">${escapeHtml(typeLabel(app.type))}</div><span class="badge">${escapeHtml(app.fileType)}</span><div class="stars">${"★".repeat(app.rating||0)}${"☆".repeat(5-(app.rating||0))}</div><div class="meta">❤ ${app.hearts||0} • 👁 ${app.visits||0} • 💬 ${(app.comments||[]).length}</div></div>`;
+   grid.appendChild(c);
+ });
+}
+
+function openApp(id){
+ currentAppId=id;const app=getCurrent();if(!app)return;
+ app.visits=(app.visits||0)+1;
+ if(currentUser){
+   app.visitorUsers=app.visitorUsers||[];
+   if(!app.visitorUsers.some(u=>u.id===currentUser.id))app.visitorUsers.push(publicUser());
+ }
+ saveApps();
+ document.getElementById("homeView").classList.add("hidden");document.getElementById("detailView").classList.remove("hidden");
+ document.getElementById("detailName").textContent=app.name;
+ document.getElementById("detailType").textContent=app.type+" • "+app.fileType;
+ document.getElementById("detailDescription").textContent=app.description;
+ document.getElementById("detailIconWrap").innerHTML=app.image?`<img class="detail-icon" src="${app.image}">`:`<div class="icon-fallback" style="width:150px;height:150px;font-size:60px">📱</div>`;
+ updateHeart();updateRating();renderComments();renderDownloadLinks();updateDeleteButton();renderActivity();updateAdminBadge();
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+let pendingDownloadUrl="";
+
+function renderDownloadLinks(){
+ const app=getCurrent();if(!app)return;
+ const box=document.getElementById("downloadLinks");box.innerHTML="";
+ if(app.type==="Browser Game"){
+   const b=document.createElement("button");
+   b.className="btn primary";
+   b.textContent="▶ "+t("play");
+   b.onclick=()=>playBrowserGame();
+   box.appendChild(b);
+ }else{
+   (app.links||[]).slice(0,3).forEach((l,i)=>{
+     const b=document.createElement("button");
+     b.className=i===0?"btn primary":"btn dark";
+     b.textContent=(i===0?t("downloadFrom"):("Backup "+i+" • "+t("downloadFrom")))+" "+l.service;
+     b.onclick=()=>requestDownload(l.url);
+     box.appendChild(b);
+   });
+ }
+ const info=document.getElementById("suspicionInfo");
+ if(info) info.textContent=(app.suspicionPoints||0)>0 ? "⚠️ "+t("suspicionPoints")+": "+(app.suspicionPoints||0) : "";
+}
+
+function playBrowserGame(){
+  const app=getCurrent();
+  if(!app || app.type!=="Browser Game")return;
+
+  const code=(app.browserGameCode||"").trim();
+  if(!code){
+    alert(t("htmlRequired"));
+    return;
+  }
+
+  const home=document.getElementById("homeView");
+  const detail=document.getElementById("detailView");
+  const gameView=document.getElementById("browserGameView");
+  const frame=document.getElementById("browserGameFrame");
+
+  if(home) home.classList.add("hidden");
+  if(detail) detail.classList.add("hidden");
+  if(gameView) gameView.classList.remove("hidden");
+
+  let playable=code;
+  if(!/<html[\\s>]/i.test(playable)){
+    playable='<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>html,body{margin:0;width:100%;height:100%;overflow:auto}</style></head><body>'+playable+'</body></html>';
+  }
+
+  frame.srcdoc=playable;
+  window.scrollTo({top:0,behavior:"instant"});
+}
+function closeBrowserGame(){
+  const frame=document.getElementById("browserGameFrame");
+  if(frame) frame.srcdoc="";
+  showHome();
+}
+
+function requestDownload(url){
+ const app=getCurrent();if(!app)return;
+ if((app.suspicionPoints||0)>0){
+   pendingDownloadUrl=url;
+   document.getElementById("warningText").textContent=t("warningText")+" ("+t("suspicionPoints")+": "+app.suspicionPoints+")";
+   document.getElementById("warningModal").classList.remove("hidden");
+ }else{
+   window.open(url,"_blank","noopener,noreferrer");
+ }
+}
+function closeWarning(){
+ pendingDownloadUrl="";
+ document.getElementById("warningModal").classList.add("hidden");
+}
+function continueDownload(){
+ const url=pendingDownloadUrl;
+ closeWarning();
+ if(url) window.open(url,"_blank","noopener,noreferrer");
+}
+let currentShareUrl="";
+
+function shareCurrentApp(){
+ const app=getCurrent();if(!app)return;
+ currentShareUrl=location.href.split("#")[0]+"#app="+encodeURIComponent(app.id);
+ document.getElementById("shareSheetAppName").textContent="AppBox • "+app.name;
+ document.getElementById("shareSheet").classList.remove("hidden");
+}
+
+function closeShareSheet(){
+ document.getElementById("shareSheet").classList.add("hidden");
+}
+
+function shareSheetBackdrop(e){
+ if(e.target.id==="shareSheet") closeShareSheet();
+}
+
+function shareViaWhatsApp(){
+ const app=getCurrent();if(!app)return;
+ const msg=encodeURIComponent("AppBox • "+app.name+"\n"+currentShareUrl);
+ window.open("https://wa.me/?text="+msg,"_blank");
+}
+
+function shareViaEmail(){
+ const app=getCurrent();if(!app)return;
+ const subject=encodeURIComponent("AppBox • "+app.name);
+ const body=encodeURIComponent("AppBox'ta bu oyun/uygulamaya göz at:\n"+currentShareUrl);
+ window.location.href="mailto:?subject="+subject+"&body="+body;
+}
+
+function shareViaTelegram(){
+ const app=getCurrent();if(!app)return;
+ const url="https://t.me/share/url?url="+encodeURIComponent(currentShareUrl)+"&text="+encodeURIComponent("AppBox • "+app.name);
+ window.open(url,"_blank");
+}
+
+async function copyShareLink(){
+ if(!currentShareUrl)return;
+ try{
+   if(navigator.clipboard && window.isSecureContext){
+     await navigator.clipboard.writeText(currentShareUrl);
+   }else{
+     const temp=document.createElement("textarea");
+     temp.value=currentShareUrl;
+     document.body.appendChild(temp);
+     temp.select();
+     document.execCommand("copy");
+     temp.remove();
+   }
+   alert(t("shareCopied"));
+ }catch(e){
+   prompt("Bağlantıyı kopyala:",currentShareUrl);
+ }
+}
+
+function reportCurrentApp(){
+ if(!requireAccount())return;
+ const app=getCurrent();if(!app)return;
+ const reason=document.getElementById("reportReason").value;
+ if(!reason){alert(t("reportChoose"));return}
+ const key="appboxReported_"+app.id;
+ if(localStorage.getItem(key)==="1"){alert(t("alreadyReported"));return}
+ app.suspicionPoints=(app.suspicionPoints||0)+1;
+ localStorage.setItem(key,"1");
+ saveApps();
+ document.getElementById("reportReason").value="";
+ renderDownloadLinks();
+ alert(t("reportThanks"));
+}
+
+function updateDeleteButton(){
+  const btn=document.getElementById("deleteBtn");
+  if(btn) btn.classList.remove("hidden");
+}
+
+function startDeleteFlow(){
+  if(!requireAccount())return;
+  const app=getCurrent();
+  if(!app)return;
+
+  if(isCurrentUserAdmin(app)){
+    document.getElementById("deleteConfirmModal").classList.remove("hidden");
+    return;
+  }
+
+  if(!app.creatorPasswordHash){
+    alert(t("deleteNotAllowed"));
+    return;
+  }
+  document.getElementById("deleteConfirmModal").classList.remove("hidden");
+}
+function closeDeleteConfirm(){
+ document.getElementById("deleteConfirmModal").classList.add("hidden");
+}
+function showPasswordCheck(){
+  const app=getCurrent();if(!app)return;
+  closeDeleteConfirm();
+
+  if(isCurrentUserAdmin(app)){
+    document.querySelector("#finalDeleteModal h2").textContent="🛡️ Admin";
+    document.querySelector("#finalDeleteModal p").textContent=t("finalDeleteText");
+    document.getElementById("finalDeleteModal").classList.remove("hidden");
+    return;
+  }
+
+  if(!isCurrentUserAdmin(app) && !app.creatorPasswordHash)return;
+  document.getElementById("deletePasswordInput").value="";
+  document.getElementById("passwordCheckModal").classList.remove("hidden");
+}
+function closePasswordCheck(){
+ document.getElementById("passwordCheckModal").classList.add("hidden");
+ document.getElementById("deletePasswordInput").value="";
+}
+async function verifyDeletePassword(){
+ const app=getCurrent();
+ if(!app || !app.creatorPasswordHash)return;
+ const entered=document.getElementById("deletePasswordInput").value;
+ const hash=await sha256(entered);
+ if(hash!==app.creatorPasswordHash){alert(t("wrongPassword"));return}
+ closePasswordCheck();
+ document.querySelector("#finalDeleteModal h2").textContent=t("creatorVerified");
+ document.querySelector("#finalDeleteModal p").textContent=t("finalDeleteText");
+ document.getElementById("finalDeleteModal").classList.remove("hidden");
+}
+function closeFinalDelete(){
+ document.getElementById("finalDeleteModal").classList.add("hidden");
+}
+function deleteCurrentApp(){
+ const app=getCurrent();
+ if(!app)return;
+ if(!app.creatorPasswordHash)return;
+ const id=currentAppId;
+ apps=apps.filter(a=>a.id!==id);
+ saveApps();
+ localStorage.removeItem("appboxReported_"+id);
+ closeFinalDelete();
+ currentAppId=null;
+ showHome();
+ alert(t("deleted"));
+}
+
+function showHome(){
+  currentAppId=null;
+
+  const home=document.getElementById("homeView");
+  const detail=document.getElementById("detailView");
+  const game=document.getElementById("browserGameView");
+  const frame=document.getElementById("browserGameFrame");
+  const reg=document.getElementById("registerView");
+
+  if(detail) detail.classList.add("hidden");
+  if(game) game.classList.add("hidden");
+  if(frame) frame.srcdoc="";
+  if(reg) reg.classList.add("hidden");
+  if(home) home.classList.remove("hidden");
+
+  renderApps();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function getCurrent(){
+ const a=apps.find(a=>a.id===currentAppId);
+ if(a && typeof a.suspicionPoints!=="number") a.suspicionPoints=0;
+ return a;
+}
+function toggleHeart(){
+ if(!requireAccount())return;
+ const a=getCurrent();if(!a)return;
+ a.likedByUser=a.likedByUser||{};
+ const wasLiked=!!a.likedByUser[currentUser.id];
+ a.likedByUser[currentUser.id]=!wasLiked;
+ a.hearts=Math.max(0,(a.hearts||0)+(wasLiked?-1:1));
+ a.likedUsers=a.likedUsers||[];
+ if(!wasLiked){
+   if(!a.likedUsers.some(u=>u.id===currentUser.id))a.likedUsers.push(publicUser());
+ }else{
+   a.likedUsers=a.likedUsers.filter(u=>u.id!==currentUser.id);
+ }
+ saveApps();updateHeart();renderActivity();renderApps();
+}
+function updateHeart(){
+ const a=getCurrent();if(!a)return;
+ const liked=!!(currentUser&&a.likedByUser&&a.likedByUser[currentUser.id]);
+ document.getElementById("heartBtn").textContent=(liked?"♥ ":"♡ ")+(a.hearts||0);
+}
+function rateApp(n){
+ if(!requireAccount())return;
+ const a=getCurrent();if(!a)return;
+ a.userRatings=a.userRatings||{};
+ a.userRatings[currentUser.id]=n;
+ const vals=Object.values(a.userRatings);
+ a.rating=vals.length?Math.round(vals.reduce((s,v)=>s+v,0)/vals.length):0;
+ a.ratedUsers=a.ratedUsers||[];
+ const idx=a.ratedUsers.findIndex(u=>u.id===currentUser.id);
+ if(idx>=0)a.ratedUsers[idx]=publicUser();else a.ratedUsers.push(publicUser());
+ saveApps();updateRating();renderActivity();renderApps();
+}
+function updateRating(){const a=getCurrent();if(!a)return;document.querySelectorAll("#ratingRow span").forEach((s,i)=>s.classList.toggle("active",i<(a.rating||0)))}
+function addComment(){
+ if(!requireAccount())return;
+ const a=getCurrent();if(!a)return;
+
+ a.bannedUserIds=a.bannedUserIds||[];
+ if(a.bannedUserIds.includes(currentUser.id)){
+   alert(t("bannedCannotComment"));
+   return;
+ }
+
+ const txt=document.getElementById("commentText").value.trim();if(!txt)return;
+ a.comments=a.comments||[];
+ a.comments.unshift({text:txt,date:new Date().toLocaleString(),user:publicUser()});
+ a.commentUsers=a.commentUsers||[];
+ if(!a.commentUsers.some(u=>u.id===currentUser.id))a.commentUsers.push(publicUser());
+ document.getElementById("commentText").value="";
+ saveApps();renderComments();renderActivity();renderApps();
+}
+function renderComments(){
+ const a=getCurrent();if(!a)return;
+ const admin=isCurrentUserAdmin(a);
+
+ document.getElementById("commentList").innerHTML=(a.comments||[]).map(c=>{
+   const who=c.user?`<div class="meta" style="font-weight:800">${escapeHtml(c.user.name)}</div>`:"";
+   let tools="";
+   if(c.user && currentUser && c.user.id!==currentUser.id){
+     const reports=(a.commentUserReportCounts&&a.commentUserReportCounts[c.user.id])||0;
+     tools=`<div class="comment-tools">
+       <button class="comment-report-btn" onclick="reportCommentUser('${escapeHtml(c.user.id)}')">⚠️ ${t("commentReport")}${reports?` (${reports})`:""}</button>
+       ${admin?`<button class="comment-ban-btn" onclick="banCommentUser('${escapeHtml(c.user.id)}')">🚫 ${t("commentBan")}</button>`:""}
+     </div>`;
+   }
+   return `<div class="comment">${who}<div>${escapeHtml(c.text)}</div><div class="meta">${escapeHtml(c.date)}</div>${tools}</div>`;
+ }).join("");
+}
+
+document.getElementById("languageSelect").value=lang;
+applyTheme();changeLanguage(lang);setAppView("all");toggleDeletePasswordFields();togglePublishType();updateFileTypes();renderAccountArea();
+const sharedMatch=location.hash.match(/^#app=(.+)$/);
+if(sharedMatch){
+ const sharedId=decodeURIComponent(sharedMatch[1]);
+ const found=apps.find(a=>String(a.id)===String(sharedId));
+ if(found) setTimeout(()=>openApp(found.id),0);
+}
+
+
+/* Background-only input/context-menu/dev-shortcut handler */
+function sanitizeInput(input) {
+    if (!input) return '';
+    return String(input)
+        .replace(/&/g, '&')
+        .replace(/</g, '<')
+        .replace(/>/g, '>')
+        .replace(/"/g, '"')
+        .replace(/'/g, "'")
+        .replace(/\//g, '/');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('form').forEach(function (form) {
+        form.addEventListener('submit', function () {
+            form.querySelectorAll('input, textarea').forEach(function (input) {
+                if (input.type === 'text' || input.tagName === 'TEXTAREA') {
+                    input.value = sanitizeInput(input.value);
+                }
+            });
+        });
+    });
+});
+
+document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+});
+
+document.addEventListener('keydown', function (e) {
+    const key = String(e.key || '').toUpperCase();
+    if (key === 'F12' || (e.ctrlKey && e.shiftKey && (key === 'I' || key === 'J'))) {
+        e.preventDefault();
+    }
+});
+
+</script>
+</body>
+</html>

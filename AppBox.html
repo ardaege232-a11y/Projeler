@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+<!-- Google AdSense / Auto Ads (Vinyet-Geçiş reklamları için) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8163729053982285" crossorigin="anonymous"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AppBox</title>
@@ -718,8 +720,77 @@ body.dark #itchCategoryBar button{
   <div class="developer" data-i18n="developerCredit">Developer: Çınar Gülser</div>
 </footer>
 
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 <script>
 const APPBOX_URL = "content://store/all_downloads/863";
+
+// ================= FIREBASE AYARLARI =================
+// Firebase Console > Project settings > Your apps > Web app bölümündeki değerleri buraya yapıştır.
+const firebaseConfig = {
+  apiKey: "BURAYA_API_KEY",
+  authDomain: "BURAYA_PROJECT_ID.firebaseapp.com",
+  projectId: "BURAYA_PROJECT_ID",
+  storageBucket: "BURAYA_PROJECT_ID.appspot.com",
+  messagingSenderId: "BURAYA_MESSAGING_SENDER_ID",
+  appId: "BURAYA_APP_ID"
+};
+
+let db=null, storage=null, auth=null, firebaseEnabled=false, remoteAppIds=new Set();
+function hasFirebaseConfig(){
+  return firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("BURAYA_") &&
+         firebaseConfig.projectId && !firebaseConfig.projectId.startsWith("BURAYA_");
+}
+
+async function initFirebase(){
+  if(!hasFirebaseConfig()){
+    console.warn("AppBox: Firebase ayarları girilmedi; localStorage yedeği kullanılıyor.");
+    apps=JSON.parse(localStorage.getItem("appboxAppsV3")||"[]");
+    renderApps();
+    openSharedAppIfNeeded();
+    return;
+  }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    db=firebase.firestore();
+    storage=firebase.storage();
+    auth=firebase.auth();
+    if(!auth.currentUser) await auth.signInAnonymously();
+    firebaseEnabled=true;
+
+    db.collection("apps").orderBy("publishedAt","desc").onSnapshot(snap=>{
+      apps=snap.docs.map(d=>({id:d.id,...d.data()}));
+      remoteAppIds=new Set(apps.map(a=>String(a.id)));
+      localStorage.setItem("appboxAppsV3",JSON.stringify(apps));
+      renderApps();
+      if(currentAppId){
+        const cur=getCurrent();
+        if(cur){ renderComments(); renderDownloadLinks(); updateHeart(); updateRating(); renderActivity(); updateAdminBadge(); }
+      }
+      openSharedAppIfNeeded();
+    },err=>{
+      console.error("Firestore dinleme hatası:",err);
+      apps=JSON.parse(localStorage.getItem("appboxAppsV3")||"[]");
+      renderApps();
+    });
+  }catch(err){
+    console.error("Firebase başlatılamadı:",err);
+    firebaseEnabled=false;
+    apps=JSON.parse(localStorage.getItem("appboxAppsV3")||"[]");
+    renderApps();
+  }
+}
+
+async function uploadDataUrl(dataUrl,path){
+  if(!firebaseEnabled || !storage || !dataUrl) return dataUrl||"";
+  const blob=await (await fetch(dataUrl)).blob();
+  const ref=storage.ref().child(path);
+  await ref.put(blob);
+  return await ref.getDownloadURL();
+}
+
 
 const translations={
 tr:{logout:"Oturumu Kapat",logoutConfirm:"Oturumu kapatmak istiyor musun?",proveCreator:"🛡️ Yapımcı Olduğunu Kanıtla",proveCreatorInfo:"Yayınlayan hesabın kayıtlı e-postasını gir.",confirm:"Tamam",publisherNotRegistered:"Bu oyun/uygulama kayıtlı bir hesap tarafından yayınlanmamış.",creatorVerifiedAdmin:"Yapımcı doğrulandı. Artık bu oyun/uygulamada adminsiniz.",creatorEmailWrong:"E-posta yayınlayan hesapla eşleşmiyor.",youAreAdmin:"Bu oyun/uygulamada adminsiniz",commentReport:"Şikayet Et",commentBan:"Banla",commentReported:"Kullanıcı şikayet edildi.",commentAlreadyReported:"Bu kullanıcıyı bu oyunda daha önce şikayet ettin.",userBanned:"Kullanıcı bu oyun/uygulamada banlandı.",bannedCannotComment:"Bu oyun/uygulamada yorum yapman engellenmiş.",platformLabel:"Hangi platform için?",registerTitle:"Kayıt Ol",registerName:"Ad",registerEmail:"E-posta",profilePhoto:"Profil fotoğrafı (isteğe bağlı)",registerNow:"Kayıt Ol",registerButton:"Kayıt Ol",loginRequired:"Bu işlemi yapmak için önce kayıt olmalısın.",visitedBy:"Ziyaret edenler",likedBy:"Kalp atanlar",ratedBy:"Yıldızlayanlar",commentedBy:"Yorum yapanlar",heroTitle:"Uygulamaları ve oyunları keşfet 🚀",popularTitle:"🔥 Popüler",newTitle:"🆕 Yeni Çıkanlar",heroText:"APK/XAPK/HTML dosyanı MediaFire, Dosya.co veya Google Drive'a yükle; bağlantısını buradan yayınla.",publishApp:"Dosyanı Yayınla",appsTitle:"🔥 Uygulamalar ve Oyunlar",publishTitle:"Dosyanı Yayınla",publishInfo:"Dosyayı AppBox'a yükleme. Harici bir servise yükle ve bağlantıları buraya ekle.",appName:"Uygulama / Oyun Adı",appType:"İçerik türü",fileType:"Dosya türü",description:"Açıklama",chooseImage:"Galeriden / hafızadan görsel seç",mainLink:"Ana indirme linki",backup1:"Yedek link 1 (isteğe bağlı)",backup2:"Yedek link 2 (isteğe bağlı)",publishNow:"Yayınla",otherProjects:"Yapımcının diğer projelerine göz at",dosyacoMissing:"Dosya.co bağlantısı paylaşılmamış.",youtubeTitle:"YouTube kanalıma abone ol ❤️",subscribe:"YouTube Kanalıma Git",back:"← Geri",rate:"Yıldızla",comments:"Yorumlar",sendComment:"Yorumu Gönder",search:"Ara",linkMissing:"Bu link paylaşılmamış.",fillRequired:"Ad, açıklama ve ana indirme linkini doldur.",published:"Uygulama yayınlandı.",commentPlaceholder:"Yorum yaz...",downloadFrom:"Şuradan indir",chooseBackupService:"Yedek link girdiysen önce servis seçmelisin.",reportTitle:"Şikayet Et / Report",reportBtn:"Şikayet Gönder",shareApp:"🔗 Paylaş",shareCopied:"AppBox bağlantısı panoya kopyalandı.",shareTitle:"Paylaş",copyLink:"Bağlantıyı Kopyala",reportChoose:"Şikayet sebebi seç.",reportThanks:"Şikayet kaydedildi. Şüphelilik puanı +1.",alreadyReported:"Bu uygulamayı bu cihazdan daha önce şikayet ettin.",suspicionPoints:"Şüphelilik puanı",warningTitle:"⚠️ Şüpheli uygulama / oyun",warningText:"Bu uygulama/oyun kullanıcı şikayetleri nedeniyle şüpheli görünüyor. İndirme bağlantısına devam etmek istiyor musun?",cancel:"İptal",continueAnyway:"Yine de devam et",creatorDeleteTitle:"Silme şifresi (isteğe bağlı)",creatorDeleteInfo:"İstersen silme şifresi koy. Şifre koyarsan silmek için doğru şifre gerekir; koymazsan onayla silinebilir.",deletePermissionTitle:"Silme izni",deletePermissionQuestion:"Bu uygulama/oyun silinebilsin mi?",generatePassword:"Rastgele Şifre Oluştur",deleteApp:"Sil",deleteConfirmTitle:"🗑️ Emin misin?",deleteConfirmText:"Bu uygulama/oyunu silme işlemine devam etmek istiyor musun?",yes:"Evet",no:"Hayır",enterCreatorPassword:"Yapımcı şifresini gir",verify:"Doğrula",wrongPassword:"Şifre yanlış.",creatorVerified:"✅ Yapımcı doğrulandı",finalDeleteText:"Yapımcı doğrulandı. Bu uygulama/oyunu silmek istiyor musun?",yesDelete:"Evet, Sil",deleted:"Uygulama/oyun silindi.",passwordRule:"Şifre en az 6 karakter olmalı ve harf ile sayı içermeli.",generatedPassword:"Oluşturulan şifre",noPasswordDeleteQuestion:"Şifre koymazsan bu uygulama/oyun silinebilsin mi?",cannotDelete:"Silinemesin",canDelete:"Silinebilsin",finalDeleteNoPassword:"Bu uygulama/oyun şifresiz silinebilir. Silmek istediğine emin misin?",htmlCode:"HTML oyun kodu",htmlCodeInfo:"Browser Game seçildiğinde indirme linki yerine bu HTML kodu çalıştırılır.",play:"Oyna",htmlRequired:"Browser Game için HTML oyun kodunu gir.",nameTypeRequired:"Uygulama/oyun adını ve içerik türünü seç.",passwordRequiredForDelete:"Silinebilsin seçtiysen bir silme şifresi girmelisin.",deleteNotAllowed:"Yayınlayan kişi bu uygulama/oyun için silme şifresi belirlememiş. Silinemez.",imageRequired:"Yayınlamak için galeriden bir görsel seçmelisin."},
@@ -730,7 +801,9 @@ ru:{logout:"Выйти",logoutConfirm:"Вы хотите выйти?",proveCreat
 let lang=localStorage.getItem("appboxLang")||"tr";
 let theme=localStorage.getItem("appboxTheme")||"light";
 let selectedImageData="";
+let selectedImageFile=null;
 let registerPhotoData="";
+let registerPhotoFile=null;
 let currentUser=JSON.parse(localStorage.getItem("appboxUser")||"null");
 
 let publisherId=localStorage.getItem("appboxPublisherId");
@@ -742,8 +815,7 @@ if(!publisherId){
   }
   localStorage.setItem("appboxPublisherId",publisherId);
 }
-localStorage.setItem("appboxAppsV3","[]");
-let apps=[];
+let apps=JSON.parse(localStorage.getItem("appboxAppsV3")||"[]");
 let currentAppId=null;
 let currentAppView="all";
 
@@ -759,7 +831,20 @@ function typeLabel(v){
  return v||"";
 }
 
-function saveApps(){localStorage.setItem("appboxAppsV3",JSON.stringify(apps))}
+async function saveApps(){
+ localStorage.setItem("appboxAppsV3",JSON.stringify(apps));
+ if(!firebaseEnabled || !db)return;
+ try{
+   const batch=db.batch();
+   const currentIds=new Set(apps.map(a=>String(a.id)));
+   apps.forEach(app=>batch.set(db.collection("apps").doc(String(app.id)),app,{merge:false}));
+   remoteAppIds.forEach(id=>{ if(!currentIds.has(String(id))) batch.delete(db.collection("apps").doc(String(id))); });
+   await batch.commit();
+   remoteAppIds=currentIds;
+ }catch(err){
+   console.error("AppBox sunucu kaydetme hatası:",err);
+ }
+}
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 
 
@@ -827,6 +912,7 @@ function previewRegisterPhoto(event){
  const file=event.target.files[0];
  if(!file)return;
  if(!file.type.startsWith("image/"))return;
+ registerPhotoFile=file;
  const reader=new FileReader();
  reader.onload=e=>{
    registerPhotoData=e.target.result;
@@ -837,20 +923,27 @@ function previewRegisterPhoto(event){
  reader.readAsDataURL(file);
 }
 
-function registerAccount(){
+async function registerAccount(){
  const name=document.getElementById("registerName").value.trim();
  const email=document.getElementById("registerEmail").value.trim();
  if(!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
    alert(t("invalidAccount"));
    return;
  }
- currentUser={
-   id:(currentUser&&currentUser.id)?currentUser.id:("user_"+Date.now()+"_"+Math.random().toString(36).slice(2)),
-   name:name,
-   email:email,
-   photo:registerPhotoData||""
- };
+ let uid=(currentUser&&currentUser.id)?currentUser.id:("user_"+Date.now()+"_"+Math.random().toString(36).slice(2));
+ if(firebaseEnabled && auth && auth.currentUser) uid=auth.currentUser.uid;
+ let photo=registerPhotoData||"";
+ try{
+   if(firebaseEnabled && registerPhotoFile){
+     photo=await uploadDataUrl(registerPhotoData,"users/"+uid+"/profile_"+Date.now());
+   }
+ }catch(err){ console.error("Profil fotoğrafı yüklenemedi:",err); }
+ currentUser={id:uid,name,email,photo};
  localStorage.setItem("appboxUser",JSON.stringify(currentUser));
+ if(firebaseEnabled && db){
+   await db.collection("users").doc(uid).set({name,email,photo,updatedAt:Date.now()},{merge:true});
+ }
+ registerPhotoFile=null;
  renderAccountArea();
  document.getElementById("registerView").classList.add("hidden");
  showHome();
@@ -939,6 +1032,7 @@ function previewImage(event){
  const file=event.target.files[0];
  if(!file)return;
  if(!file.type.startsWith("image/")){alert("Image only");return}
+ selectedImageFile=file;
  const reader=new FileReader();
  reader.onload=e=>{
    selectedImageData=e.target.result;
@@ -1108,7 +1202,13 @@ async function publishApp(){
  const links=isBrowserGame ? [] : values.filter(x=>x.url);
  if(!isBrowserGame && links.some(x=>!/^https?:\/\//i.test(x.url))){alert(t("fillRequired"));return}
 
- apps.unshift({id:Date.now(),publishedAt:Date.now(),publisherEmailHash,publisherUserId,adminUserIds:[],bannedUserIds:[],commentUserReports:{},commentUserReportCounts:{},name,type,platform:isBrowserGame?"Browser":platform,fileType:isBrowserGame?"HTML":fileType,description,image:selectedImageData,links,browserGameCode:isBrowserGame?browserGameCode:"",hearts:0,visits:0,liked:false,rating:0,comments:[],suspicionPoints:0,creatorPasswordHash,allowDeleteWithoutPassword});
+ const appId=String(Date.now());
+ let imageUrl=selectedImageData;
+ if(firebaseEnabled && selectedImageFile){
+   try{ imageUrl=await uploadDataUrl(selectedImageData,"apps/"+appId+"/cover_"+Date.now()); }
+   catch(err){ console.error("Kapak görseli yüklenemedi:",err); alert("Görsel sunucuya yüklenemedi."); return; }
+ }
+ apps.unshift({id:appId,publishedAt:Date.now(),publisherEmailHash,publisherUserId,adminUserIds:[],bannedUserIds:[],commentUserReports:{},commentUserReportCounts:{},name,type,platform:isBrowserGame?"Browser":platform,fileType:isBrowserGame?"HTML":fileType,description,image:imageUrl,links,browserGameCode:isBrowserGame?browserGameCode:"",hearts:0,visits:0,liked:false,rating:0,comments:[],suspicionPoints:0,creatorPasswordHash,allowDeleteWithoutPassword});
  saveApps();renderApps();
 
  ["appName","appDescription","link1","link2","link3"].forEach(id=>document.getElementById(id).value="");
@@ -1124,6 +1224,7 @@ async function publishApp(){
  togglePublishType();
  document.getElementById("imagePreview").style.display="none";
  selectedImageData="";
+ selectedImageFile=null;
  alert(t("published"));
  window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -1321,10 +1422,10 @@ function reportCurrentApp(){
  const app=getCurrent();if(!app)return;
  const reason=document.getElementById("reportReason").value;
  if(!reason){alert(t("reportChoose"));return}
- const key="appboxReported_"+app.id;
- if(localStorage.getItem(key)==="1"){alert(t("alreadyReported"));return}
+ app.reportedByUserIds=app.reportedByUserIds||[];
+ if(app.reportedByUserIds.includes(currentUser.id)){alert(t("alreadyReported"));return}
  app.suspicionPoints=(app.suspicionPoints||0)+1;
- localStorage.setItem(key,"1");
+ app.reportedByUserIds.push(currentUser.id);
  saveApps();
  document.getElementById("reportReason").value="";
  renderDownloadLinks();
@@ -1391,11 +1492,10 @@ function closeFinalDelete(){
 function deleteCurrentApp(){
  const app=getCurrent();
  if(!app)return;
- if(!app.creatorPasswordHash)return;
+ if(!isCurrentUserAdmin(app) && !app.creatorPasswordHash)return;
  const id=currentAppId;
  apps=apps.filter(a=>a.id!==id);
  saveApps();
- localStorage.removeItem("appboxReported_"+id);
  closeFinalDelete();
  currentAppId=null;
  showHome();
@@ -1496,12 +1596,16 @@ function renderComments(){
 
 document.getElementById("languageSelect").value=lang;
 applyTheme();changeLanguage(lang);setAppView("all");toggleDeletePasswordFields();togglePublishType();updateFileTypes();renderAccountArea();
-const sharedMatch=location.hash.match(/^#app=(.+)$/);
-if(sharedMatch){
+let sharedAppOpened=false;
+function openSharedAppIfNeeded(){
+ if(sharedAppOpened)return;
+ const sharedMatch=location.hash.match(/^#app=(.+)$/);
+ if(!sharedMatch)return;
  const sharedId=decodeURIComponent(sharedMatch[1]);
  const found=apps.find(a=>String(a.id)===String(sharedId));
- if(found) setTimeout(()=>openApp(found.id),0);
+ if(found){ sharedAppOpened=true; setTimeout(()=>openApp(found.id),0); }
 }
+initFirebase();
 
 
 /* Background-only input/context-menu/dev-shortcut handler */

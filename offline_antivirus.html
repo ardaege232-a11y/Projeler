@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Offline Dosya Güvenlik Tarayıcısı</title>
+  <style>
+    :root{
+      color-scheme: dark;
+      --bg:#0b1020; --panel:#141b2d; --muted:#8fa0bd; --text:#eef4ff;
+      --ok:#35d07f; --warn:#ffbf47; --bad:#ff5d73; --line:#26324a; --accent:#6ea8fe;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:linear-gradient(180deg,#0b1020,#0e1528);color:var(--text)}
+    .wrap{max-width:1000px;margin:auto;padding:28px}
+    .card{background:rgba(20,27,45,.95);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.25)}
+    h1{margin:0 0 8px;font-size:clamp(26px,4vw,40px)}
+    p{color:var(--muted);line-height:1.55}
+    .privacy{display:inline-flex;gap:8px;align-items:center;background:#10263a;border:1px solid #1b4964;color:#bce9ff;padding:8px 12px;border-radius:999px;font-size:14px}
+    .drop{margin-top:20px;border:2px dashed #3a4969;border-radius:16px;padding:30px;text-align:center;transition:.2s;background:#0f1628}
+    .drop.drag{border-color:var(--accent);background:#121e35}
+    input[type=file]{display:none}
+    button,.file-btn{cursor:pointer;border:0;border-radius:12px;padding:12px 16px;font-weight:700;background:var(--accent);color:#07101f}
+    button.secondary{background:#202c43;color:var(--text);border:1px solid var(--line)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    table{width:100%;border-collapse:collapse;margin-top:18px}
+    th,td{text-align:left;padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
+    th{color:#b9c7dd;font-size:13px}
+    .badge{display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800}
+    .ok{background:rgba(53,208,127,.14);color:var(--ok)}
+    .warn{background:rgba(255,191,71,.14);color:var(--warn)}
+    .bad{background:rgba(255,93,115,.14);color:var(--bad)}
+    code{word-break:break-all;color:#c9dcff;font-size:12px}
+    .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+    .stat{background:#0f1628;border:1px solid var(--line);border-radius:14px;padding:14px}
+    .stat b{font-size:24px;display:block}
+    .small{font-size:13px}
+    .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+    .developer-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:#b9c7dd}
+    .developer-top a{color:#07101f;background:var(--accent);padding:8px 11px;border-radius:999px;text-decoration:none;font-weight:800}
+    .settings-panel{
+      position:fixed;
+      inset:0;
+      z-index:1000;
+      background:rgba(3,7,18,.72);
+      backdrop-filter:blur(7px);
+      padding:20px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .settings-panel[hidden]{display:none}
+    .settings-box{
+      width:min(440px,100%);
+      background:#111a2d;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:20px;
+      box-shadow:0 24px 70px rgba(0,0,0,.5);
+    }
+    .settings-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .settings-head h3{margin:0}
+    .close-settings{padding:8px 11px;background:#202c43;color:var(--text)}
+    .settings-panel label{display:block;margin-bottom:8px;color:#b9c7dd}
+    .settings-panel select{
+      width:100%;
+      background:#162137;
+      color:var(--text);
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:10px 12px;
+      font:inherit;
+    }
+    .developer-box{
+      margin-top:18px;
+      padding:16px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#0c1425;
+    }
+    .developer-box strong{display:block;margin-bottom:12px}
+    .youtube-btn{
+      display:inline-block;
+      text-decoration:none;
+      border-radius:12px;
+      padding:11px 14px;
+      font-weight:800;
+      background:#fff;
+      color:#111827;
+    }
+    @media(max-width:700px){.summary{grid-template-columns:1fr} table{font-size:13px}.wrap{padding:14px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="topbar">
+      <div class="developer-top">
+        <span>Developer: Çınar Gülser</span>
+        <a href="https://m.youtube.com/@sideflock17/shorts" target="_blank" rel="noopener noreferrer" data-i18n="subscribe">YouTube kanalıma abone ol.</a>
+      </div>
+    </div>
+    <span class="privacy" data-i18n="privacy">🔒 Tamamen yerel — dosyalar sunucuya gönderilmez</span>
+    <h1 data-i18n="title">Offline Dosya Güvenlik Tarayıcısı</h1>
+    <p data-i18n="description">
+      Bu araç yalnızca seçtiğiniz dosyaları tarayıcı içinde analiz eder. SHA‑256 özeti üretir,
+      riskli uzantıları ve bazı basit şüpheli içerik göstergelerini işaretler.
+      Gerçek bir antivirüs motorunun yerini tutmaz.
+    </p>
+
+    <div id="drop" class="drop">
+      <div style="font-size:42px">🛡️</div>
+      <h3 data-i18n="dropTitle">Dosyaları buraya bırakın</h3>
+      <p data-i18n="or">veya</p>
+      <label class="file-btn" for="files" data-i18n="choose">Dosya seç</label>
+      <input id="files" type="file" multiple />
+      <p class="small" data-i18n="browserNote">Tarayıcı güvenliği nedeniyle tüm disk otomatik taranamaz.</p>
+    </div>
+
+    <div class="actions">
+      <button id="clear" class="secondary" data-i18n="clear">Listeyi temizle</button>
+    </div>
+
+
+
+    <div class="summary">
+      <div class="stat"><b id="count">0</b><span data-i18n="files">Dosya</span></div>
+      <div class="stat"><b id="safe">0</b><span data-i18n="lowRisk">Düşük risk</span></div>
+      <div class="stat"><b id="risky">0</b><span data-i18n="review">İncelenmeli</span></div>
+    </div>
+
+    <div style="overflow:auto">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="file">Dosya</th><th data-i18n="size">Boyut</th><th data-i18n="result">Sonuç</th><th data-i18n="reason">Neden</th><th>SHA‑256</th>
+          </tr>
+        </thead>
+        <tbody id="results"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const riskyExtensions = new Set([
+  "exe","msi","bat","cmd","com","scr","ps1","vbs","vbe","js","jse","wsf","wsh",
+  "hta","reg","dll","jar","lnk","iso","img","apk"
+]);
+
+const suspiciousPatterns = [
+  { re:/powershell\s+.*(-enc|-encodedcommand)/i, why:"Encoded PowerShell command" },
+  { re:/fromcharcode\s*\(/i, why:"JavaScript character encoding / obfuscation" },
+  { re:/eval\s*\(/i, why:"Dynamic code execution (eval)" },
+  { re:/wscript\.shell/i, why:"Windows Script Host call" },
+  { re:/createobject\s*\(/i, why:"Script object creation call" },
+  { re:/invoke-expression/i, why:"PowerShell Invoke-Expression" },
+  { re:/certutil\s+.*-decode/i, why:"Content decoding with Certutil" },
+  { re:/bitsadmin/i, why:"BITSAdmin usage" },
+  { re:/rundll32/i, why:"rundll32 call" }
+];
+
+const state = [];
+const $ = s => document.querySelector(s);
+
+function humanSize(n){
+  const u=["B","KB","MB","GB"]; let i=0, x=n;
+  while(x>=1024 && i<u.length-1){x/=1024;i++}
+  return `${x.toFixed(i?1:0)} ${u[i]}`;
+}
+
+async function sha256(file){
+  const buf = await file.arrayBuffer();
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+function ext(name){
+  const p=name.toLowerCase().split(".");
+  return p.length>1 ? p.pop() : "";
+}
+
+async function inspectText(file){
+  // Büyük dosyalarda sadece ilk 1 MB okunur.
+  const slice = file.slice(0, Math.min(file.size, 1024*1024));
+  try{
+    const text = await slice.text();
+    const hits = [];
+    for(const p of suspiciousPatterns){
+      if(p.re.test(text)) hits.push(p.why);
+    }
+    return hits;
+  }catch{ return []; }
+}
+
+async function scanFile(file){
+  let reasons = [];
+  let score = 0;
+  const e = ext(file.name);
+
+  if(riskyExtensions.has(e)){
+    score += 2;
+    reasons.push(`Risky/executable extension: .${e}`);
+  }
+
+  if(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx)\.(exe|scr|bat|cmd|js|vbs)$/i.test(file.name)){
+    score += 4;
+    reasons.push("Executable file hidden with a double extension");
+  }
+
+  if(/^(invoice|fatura|dekont|ödeme|payment|document|belge)[-_ ]?\d*\.(exe|scr|js|vbs)$/i.test(file.name)){
+    score += 2;
+    reasons.push("Filename pattern commonly used in social engineering");
+  }
+
+  const textLike = file.type.startsWith("text/") ||
+    ["js","jse","vbs","vbe","bat","cmd","ps1","hta","html","htm","svg","xml"].includes(e);
+
+  if(textLike){
+    const hits = await inspectText(file);
+    if(hits.length){
+      score += Math.min(4, hits.length);
+      reasons.push(...hits);
+    }
+  }
+
+  const hash = await sha256(file);
+
+  let level = "Low risk", cls = "ok";
+  if(score >= 4){ level="High risk"; cls="bad"; }
+  else if(score >= 2){ level="Needs review"; cls="warn"; }
+
+  if(!reasons.length) reasons.push("No obvious indicators found by basic local checks");
+
+  return {
+    name:file.name, size:file.size, level, cls,
+    reasons:[...new Set(reasons)], hash
+  };
+}
+
+function render(){
+  const body=$("#results");
+  body.innerHTML = state.map(r => `
+    <tr>
+      <td>${escapeHtml(r.name)}</td>
+      <td>${humanSize(r.size)}</td>
+      <td><span class="badge ${r.cls}">${r.level}</span></td>
+      <td>${r.reasons.map(escapeHtml).join("<br>")}</td>
+      <td><code>${r.hash}</code></td>
+    </tr>`).join("");
+
+  $("#count").textContent = state.length;
+  $("#safe").textContent = state.filter(x=>x.cls==="ok").length;
+  $("#risky").textContent = state.filter(x=>x.cls!=="ok").length;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  })[c]);
+}
+
+async function handle(files){
+  for(const f of files){
+    const row = await scanFile(f);
+    state.push(row);
+    render();
+  }
+}
+
+$("#files").addEventListener("change", e => handle(e.target.files));
+
+const drop=$("#drop");
+["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e=>{
+  e.preventDefault(); drop.classList.add("drag");
+}));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e=>{
+  e.preventDefault(); drop.classList.remove("drag");
+}));
+drop.addEventListener("drop", e => handle(e.dataTransfer.files));
+
+$("#clear").addEventListener("click", ()=>{
+  state.length=0; render(); $("#files").value="";
+});
+
+
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="offline-tarama-raporu.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+const translations = {
+  en: {
+    privacy:"🔒 Fully local — files are never sent to a server",
+    title:"Offline File Security Scanner",
+    description:"This tool analyzes only the files you select in your browser. It generates SHA-256 hashes and flags risky file extensions and simple indicators of suspicious content. It is not a replacement for a full antivirus engine.",
+    dropTitle:"Drop files here",
+    or:"or",
+    choose:"Choose files",
+    browserNote:"Browser security prevents automatic full-disk scanning.",
+    clear:"Clear list",
+    settings:"Settings",
+    language:"Language",
+    subscribe:"Subscribe to my YouTube channel",
+    files:"Files",
+    lowRisk:"Low risk",
+    review:"Needs review",
+    file:"File",
+    size:"Size",
+    result:"Result",
+    reason:"Reason"
+  }
+};
+
+function applyLanguage(lang){
+  const dict = translations.en;
+  document.documentElement.lang = "en-US";
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    const key = el.dataset.i18n;
+    if(dict[key] !== undefined) el.textContent = dict[key];
+  });
+}
+
+
+
+applyLanguage("en");
+
+</script>
+</body>
+</html>

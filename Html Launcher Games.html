@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Html Launcher</title>
+<style>
+:root{
+ --bg:#0a0d14;--panel:#111722;--panel2:#182231;--line:#2a364a;
+ --text:#f6f8fc;--muted:#95a2b6;--accent:#6678ff;--accent2:#8b5fff;
+ --green:#2ed0a3;--red:#ff6476;--pink:#ff7fb1;
+}
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100vh;color:var(--text);
+ font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+ background:
+ radial-gradient(circle at 85% 0,#1d2451 0,transparent 28%),
+ linear-gradient(180deg,#080b10,#0d121a 55%,#080b10);
+}
+button,input,textarea{font:inherit}
+.hidden{display:none!important}
+.app{max-width:1250px;margin:auto;padding:22px}
+.topbar{display:flex;gap:14px;align-items:center}
+.brand{font-size:26px;font-weight:950;white-space:nowrap}.brand span{color:#7e8cff}
+.searchWrap{flex:1;position:relative}
+.searchWrap input{
+ width:100%;padding:13px 45px 13px 16px;border-radius:14px;
+ border:1px solid var(--line);background:var(--panel);color:#fff;outline:none
+}
+.searchWrap input:focus{border-color:#7185ff;box-shadow:0 0 0 3px #7185ff20}
+.searchIcon{position:absolute;right:15px;top:10px;font-size:21px;color:#8591a7}
+.addBtn{
+ border:0;background:linear-gradient(135deg,var(--accent),var(--accent2));
+ color:#fff;padding:12px 18px;border-radius:13px;font-weight:850;cursor:pointer
+}
+.sectionHead{display:flex;justify-content:space-between;align-items:end;margin:24px 0 13px}
+.sectionHead h2{margin:0;font-size:21px}.muted{font-size:13px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.card{
+ position:relative;overflow:hidden;border:1px solid var(--line);border-radius:18px;
+ background:linear-gradient(180deg,#151d2a,#101721);cursor:pointer;transition:.18s
+}
+.card:hover{transform:translateY(-4px);border-color:#53698d}
+.cover{height:145px;display:grid;place-items:center;background:linear-gradient(135deg,#26355e,#1a2334);font-size:48px;font-weight:900;overflow:hidden}
+.cover img{width:100%;height:100%;object-fit:cover}
+.cardBody{padding:14px}.name{font-weight:850;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kind{font-size:12px;color:var(--muted);margin-top:5px}
+.delete{position:absolute;right:9px;top:9px;width:35px;height:35px;border-radius:10px;border:1px solid #ffffff22;background:#0b1018d9;color:#fff;cursor:pointer;z-index:2}
+.delete:hover{background:#481720}
+.empty{padding:58px 20px;border:1px dashed #35445d;border-radius:18px;background:#0f162188;text-align:center;color:var(--muted)}
+.empty .icon{font-size:50px;margin-bottom:10px}
+dialog{
+ width:min(760px,calc(100% - 24px));padding:0;border-radius:20px;
+ border:1px solid var(--line);background:#0f1621;color:#fff;box-shadow:0 35px 100px #000c
+}
+dialog::backdrop{background:#02050bcc;backdrop-filter:blur(6px)}
+.mh{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line)}
+.mh strong{font-size:19px}.mb{padding:20px}.mf{padding:16px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.btn{border:1px solid var(--line);background:var(--panel2);color:#fff;border-radius:11px;padding:10px 14px;cursor:pointer}
+.save{border:0;background:linear-gradient(135deg,var(--green),#21afc9);color:#061814;font-weight:900}
+.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.choice{padding:16px 9px;border:1px solid var(--line);border-radius:14px;background:#151e2b;color:#e7edf8;cursor:pointer}
+.choice.active{background:#26355e;border-color:#7187ff;box-shadow:inset 0 0 0 1px #7187ff}
+.choice b{display:block;margin-top:5px;font-size:13px}
+.drop{border:1px dashed #536988;border-radius:15px;padding:30px 15px;text-align:center;background:#0c131d;color:var(--muted);cursor:pointer}
+.drop:hover,.drop.drag{border-color:#7187ff;background:#121c30}.fileName{margin-top:8px;color:#dbe6f8}
+.urlWarning{margin-top:9px;padding:10px 12px;border:1px solid #d59b383d;background:#d59b3812;border-radius:10px;color:#e9b85f;font-size:12px;font-weight:700}
+textarea,.textInput{
+ width:100%;background:#091019;color:#fff;border:1px solid var(--line);
+ border-radius:12px;padding:12px 13px;outline:none
+}
+.textInput{height:45px} textarea{height:250px;resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:13px}
+.field{margin-bottom:15px} label{display:block;margin-bottom:7px;color:#c8d2e3;font-size:13px;font-weight:700}
+.preview{
+ height:190px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#28375e,#1c2638);
+ display:grid;place-items:center;margin-bottom:14px;font-size:56px
+}
+.preview img{width:100%;height:100%;object-fit:cover}
+.details{
+ position:fixed;inset:0;z-index:40;background:
+ radial-gradient(circle at 80% 10%,#252b63 0,transparent 28%),
+ linear-gradient(180deg,#080b11,#0c121b);
+ display:flex;flex-direction:column
+}
+.detailsTop{height:58px;display:flex;align-items:center;padding:9px 14px;border-bottom:1px solid var(--line);background:#0c121bd9}
+.detailsBody{flex:1;display:grid;place-items:center;padding:25px}
+.detailsCard{
+ width:min(820px,100%);overflow:hidden;border:1px solid var(--line);border-radius:24px;
+ background:linear-gradient(180deg,#151e2d,#101620);box-shadow:0 25px 70px #0007
+}
+.detailsHero{height:320px;background:linear-gradient(135deg,#27365e,#1d2435);display:grid;place-items:center;overflow:hidden;position:relative}
+.detailsHero img{width:100%;height:100%;object-fit:cover}
+.detailsShade{position:absolute;inset:0;background:linear-gradient(transparent 35%,#0e141fdc)}
+.detailsContent{padding:22px;position:relative;margin-top:-85px}
+.detailsLogo{width:92px;height:92px;border-radius:22px;border:3px solid #131b28;background:#1a2434;display:grid;place-items:center;overflow:hidden;font-size:36px;box-shadow:0 10px 25px #0007}
+.detailsLogo img{width:100%;height:100%;object-fit:cover}
+.detailsName{font-size:29px;font-weight:950;margin-top:14px}
+.heart{font-size:23px;color:var(--pink);margin:6px 0 18px;letter-spacing:3px}
+.playBtn{
+ border:0;background:linear-gradient(135deg,#5f77ff,#875bff);color:#fff;
+ padding:13px 26px;border-radius:13px;font-size:16px;font-weight:900;cursor:pointer
+}
+.viewer{position:fixed;inset:0;z-index:50;background:#05070a;display:flex;flex-direction:column}
+.viewerBar{height:58px;display:flex;gap:10px;align-items:center;padding:8px 12px;background:#0d131c;border-bottom:1px solid var(--line)}
+.viewerTitle{font-weight:800;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.viewer iframe,.viewer object{width:100%;flex:1;border:0;background:#fff}
+
+.settingsBtn{
+ width:46px;height:46px;border-radius:13px;border:1px solid var(--line);
+ background:var(--panel);color:#fff;font-size:20px;cursor:pointer
+}
+.settingsBtn:hover{border-color:#6579ff;background:#182235}
+.settingsPage{
+ position:fixed;inset:0;z-index:35;background:
+ radial-gradient(circle at 85% 0,#1d2451 0,transparent 28%),
+ linear-gradient(180deg,#080b10,#0d121a 55%,#080b10);
+ overflow:auto
+}
+.settingsTop{
+ height:62px;display:flex;align-items:center;gap:12px;padding:10px 18px;
+ border-bottom:1px solid var(--line);background:#0c121bdd;position:sticky;top:0
+}
+.settingsTop h2{margin:0;font-size:21px}
+.settingsContent{max-width:780px;margin:auto;padding:26px 20px 50px}
+.settingCard{
+ background:linear-gradient(180deg,#151d2a,#101721);border:1px solid var(--line);
+ border-radius:18px;padding:20px;margin-bottom:16px
+}
+.settingCard h3{margin:0 0 14px;font-size:17px}
+.settingCard select{
+ width:100%;background:#0b111a;color:#fff;border:1px solid var(--line);
+ border-radius:12px;padding:12px
+}
+.themeGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.themeChoice{
+ border:1px solid var(--line);background:#151e2b;color:#fff;border-radius:13px;
+ padding:14px 10px;cursor:pointer;font-weight:800
+}
+.themeChoice.active{border-color:#7187ff;background:#26355e;box-shadow:inset 0 0 0 1px #7187ff}
+.devText{color:var(--muted);line-height:1.7}.devText strong{color:#fff}
+body.theme-light{
+ --bg:#eef2f8;--panel:#ffffff;--panel2:#eef3fa;--line:#c9d2e0;
+ --text:#172033;--muted:#66758a;
+ background:linear-gradient(180deg,#f7f9fc,#e9eef6 60%,#f7f9fc);
+ color:var(--text)
+}
+body.theme-light .app,
+body.theme-light .settingsPage{
+ background:linear-gradient(180deg,#f7f9fc,#e9eef6 60%,#f7f9fc)
+}
+body.theme-light .card,
+body.theme-light .settingCard{background:linear-gradient(180deg,#ffffff,#f3f6fa)}
+body.theme-light .topbar input,
+body.theme-light .textInput,
+body.theme-light textarea,
+body.theme-light .settingCard select{background:#fff;color:#172033}
+body.theme-light .settingsBtn,
+body.theme-light .btn,
+body.theme-light .choice,
+body.theme-light .themeChoice{color:#172033;background:#eef3fa}
+body.theme-light .detailsTop,
+body.theme-light .viewerBar,
+body.theme-light .settingsTop{background:#f7f9fc}
+body.theme-dark{
+ --bg:#000;--panel:#080808;--panel2:#111;--line:#262626;--text:#fff;--muted:#8d8d8d;
+ background:#000
+}
+body.theme-dark .app,
+body.theme-dark .settingsPage{background:#000}
+body.theme-dark .card,
+body.theme-dark .settingCard{background:#090909}
+body.theme-dark .details,
+body.theme-dark .viewer{background:#000}
+body.theme-dark .topbar input,
+body.theme-dark .textInput,
+body.theme-dark textarea,
+body.theme-dark .settingCard select{background:#050505}
+
+
+/* v6.1 fixes */
+body.theme-light dialog{
+ background:#f7f9fc;color:#172033;border-color:var(--line)
+}
+body.theme-light .mh,
+body.theme-light .mf{background:#f7f9fc}
+body.theme-light label{color:#35445b}
+body.theme-light .drop{background:#f5f8fc;color:#66758a}
+body.theme-light .choice.active,
+body.theme-light .themeChoice.active{background:#dde5ff;color:#172033}
+body.theme-light .details{
+ background:linear-gradient(180deg,#f7f9fc,#e9eef6)
+}
+body.theme-light .detailsCard{background:linear-gradient(180deg,#fff,#f3f6fa)}
+body.theme-light .detailsName{color:#172033}
+body.theme-light .viewerTitle{color:#172033}
+body.theme-dark dialog{background:#080808;color:#fff}
+body.theme-dark .mh,
+body.theme-dark .mf{background:#080808}
+body.theme-dark .details{background:#000}
+body.theme-dark .detailsCard{background:#090909}
+.youtubeBtn{
+ display:inline-flex;align-items:center;justify-content:center;margin-top:14px;
+ padding:11px 15px;border-radius:11px;background:#ff2b2b;color:#fff;
+ text-decoration:none;font-weight:900;border:1px solid #ff4b4b;
+ box-shadow:0 8px 20px #ff2b2b22;transition:.18s
+}
+.youtubeBtn:hover{transform:translateY(-1px);background:#e51f1f}
+
+@media(max-width:760px){
+ .topbar{flex-wrap:wrap}.brand{width:100%}.searchWrap{order:3;flex-basis:100%}
+ .choices{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .detailsHero{height:240px}
+}
+@media(max-width:460px){.grid{grid-template-columns:1fr}.choices{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+ <div class="topbar">
+  <div class="brand">Html <span>Launcher</span></div>
+  <div class="searchWrap"><input id="search" data-i18n-placeholder="search" placeholder="Kütüphanede ara..."><span class="searchIcon">⌕</span></div>
+  <button id="addBtn" class="addBtn" data-i18n="addGame">＋ Oyun Ekle</button>
+  <button id="settingsBtn" class="settingsBtn" title="Ayarlar">⚙️</button>
+ </div>
+
+ <div class="sectionHead">
+  <div><h2 data-i18n="library">Kütüphane</h2><div class="muted" data-i18n="savedHere">Kaydettiğin oyunlar burada</div></div>
+  <div class="muted"><span id="count">0</span> <span data-i18n="gamesWord">oyun</span></div>
+ </div>
+
+ <div id="grid" class="grid"></div>
+ <div id="empty" class="empty"><div class="icon">🎮</div><span data-i18n="empty1">Henüz oyun yok.</span><br><span data-i18n="empty2">“Oyun Ekle” ile ilk oyununu ekleyebilirsin.</span></div>
+</div>
+
+
+<div id="settingsPage" class="settingsPage hidden">
+ <div class="settingsTop">
+  <button id="settingsBack" class="btn">←</button>
+  <h2 data-i18n="settings">Ayarlar</h2>
+ </div>
+ <div class="settingsContent">
+  <div class="settingCard">
+   <h3 data-i18n="language">Dil</h3>
+   <select id="languageSelect">
+    <option value="tr">Türkçe</option>
+    <option value="en">English</option>
+    <option value="es">Español</option>
+    <option value="ru">Русский</option>
+    <option value="zh">中文</option>
+   </select>
+  </div>
+
+  <div class="settingCard">
+   <h3 data-i18n="appearance">Görünüm</h3>
+   <div class="themeGrid">
+    <button class="themeChoice active" data-theme="normal" data-i18n="normal">Normal</button>
+    <button class="themeChoice" data-theme="dark" data-i18n="dark">Karanlık</button>
+    <button class="themeChoice" data-theme="light" data-i18n="light">Aydınlık</button>
+   </div>
+  </div>
+
+  <div class="settingCard">
+   <h3 data-i18n="developerTitle">Yapımcı</h3>
+   <div class="devText"><strong>Developer: Çınar Gülser</strong></div>
+   <a class="youtubeBtn" href="https://m.youtube.com/@sideflock17/shorts" target="_blank" rel="noopener noreferrer" data-i18n="youtubeSubscribe">YouTube kanalıma abone ol</a>
+  </div>
+ </div>
+</div>
+
+<dialog id="sourceDialog">
+ <div class="mh"><strong data-i18n="addGameTitle">Oyun Ekle</strong><button id="sourceClose" class="btn">✕</button></div>
+ <div class="mb">
+  <div class="choices">
+   <button class="choice active" data-type="htmlfile">📄<b data-i18n="htmlFile">HTML Dosyası</b></button>
+   <button class="choice" data-type="htmlcode">⌨️<b data-i18n="htmlCode">HTML Kodu</b></button>
+   <button class="choice" data-type="pdf">📕<b>PDF</b></button>
+   <button class="choice" data-type="url">🌐<b>URL</b></button>
+    <button class="choice" data-type="iso">💿<b>ISO</b></button>
+    <button class="choice" data-type="pkg">📦<b>PKG</b></button>
+  </div>
+
+  <div id="fileArea">
+   <div id="drop" class="drop"><b id="dropLabel">HTML dosyanı buraya bırak</b><br><span data-i18n="chooseFile">veya seçmek için tıkla</span><div id="fileName" class="fileName"></div></div>
+   <input id="filePicker" type="file" class="hidden" accept=".html,.htm,text/html">
+  </div>
+
+  <div id="codeArea" class="hidden">
+   <label data-i18n="htmlCode">HTML kodu</label>
+   <textarea id="htmlCode" placeholder="HTML kodunu buraya yaz veya yapıştır..."></textarea>
+  </div>
+
+  <div id="urlArea" class="hidden">
+   <label>URL</label>
+   <input id="urlInput" class="textInput" placeholder="https://ornek.com/oyun">
+   <div class="urlWarning">⚠️ <span data-i18n="urlWarning">Dikkat: Bu özellik çalışmaya bilir.</span></div>
+  </div>
+ </div>
+ <div class="mf"><button id="sourceCancel" class="btn" data-i18n="cancel">İptal</button><button id="nextBtn" class="btn save" data-i18n="saveLibrary">Kütüphaneye Kaydet</button></div>
+</dialog>
+
+<dialog id="detailsDialog">
+ <div class="mh"><strong data-i18n="gameInfo">Oyun Bilgileri</strong><button id="detailsClose" class="btn">✕</button></div>
+ <div class="mb">
+  <div class="field"><label>Logo</label><input id="logoPicker" type="file" accept="image/*"></div>
+  <div id="logoPreview" class="preview" style="height:130px">🎮</div>
+
+  <div class="field"><label data-i18n="cover">Kapak Fotoğrafı</label><input id="coverPicker" type="file" accept="image/*"></div>
+  <div id="coverPreview" class="preview">🖼️</div>
+
+  <div class="field"><label data-i18n="name">Ad</label><input id="gameName" class="textInput" placeholder="Oyunun adını yaz"></div>
+ </div>
+ <div class="mf"><button id="backDetails" class="btn" data-i18n="back">Geri</button><button id="finalSave" class="btn save" data-i18n="save">Kaydet</button></div>
+</dialog>
+
+<div id="gameDetails" class="details hidden">
+ <div class="detailsTop"><button id="detailsBack" class="btn">← <span data-i18n="library">Kütüphane</span></button></div>
+ <div class="detailsBody">
+  <div class="detailsCard">
+   <div id="detailsHero" class="detailsHero">🎮<div class="detailsShade"></div></div>
+   <div class="detailsContent">
+    <div id="detailsLogo" class="detailsLogo">🎮</div>
+    <div id="detailsName" class="detailsName"></div>
+    <button id="playBtn" class="playBtn">▶ <span data-i18n="play">Oyna</span></button>
+   </div>
+  </div>
+ </div>
+</div>
+
+<div id="viewer" class="viewer hidden">
+ <div class="viewerBar">
+  <button id="viewerBack" class="btn">← <span data-i18n="back">Geri</span></button>
+  <div id="viewerTitle" class="viewerTitle"></div>
+  <button id="reload" class="btn">↻ <span data-i18n="reload">Yenile</span></button>
+  <button id="full" class="btn">⛶ <span data-i18n="fullscreen">Tam Ekran</span></button>
+ </div>
+ <iframe id="htmlFrame" class="hidden" sandbox="allow-scripts allow-forms allow-modals allow-pointer-lock allow-popups allow-downloads allow-same-origin"></iframe>
+ <iframe id="urlFrame" class="hidden" referrerpolicy="no-referrer-when-downgrade" allow="fullscreen; autoplay; gamepad; clipboard-read; clipboard-write"></iframe>
+ <object id="pdfFrame" class="hidden" type="application/pdf"></object>
+</div>
+
+<script>
+const DB='HtmlLauncherV5', STORE='games';
+let db, mode='htmlfile', selectedFile=null, pending=null, selectedGame=null, pdfUrl=null;
+const $=id=>document.getElementById(id);
+
+function openDB(){
+ return new Promise((res,rej)=>{
+  const r=indexedDB.open(DB,1);
+  r.onupgradeneeded=e=>e.target.result.createObjectStore(STORE,{keyPath:'id'});
+  r.onsuccess=e=>{db=e.target.result;res()};
+  r.onerror=()=>rej(r.error)
+ })
+}
+function os(m='readonly'){return db.transaction(STORE,m).objectStore(STORE)}
+function all(){return new Promise((res,rej)=>{const r=os().getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function put(x){return new Promise((res,rej)=>{const r=os('readwrite').put(x);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+function remove(id){return new Promise((res,rej)=>{const r=os('readwrite').delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+function esc(s=''){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function readText(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error);r.readAsText(f)})}
+function readData(f){return new Promise((res,rej)=>{if(!f)return res('');const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error);r.readAsDataURL(f)})}
+
+async function render(){
+ let list=await all();
+ const q=$('search').value.trim().toLocaleLowerCase('tr');
+ if(q) list=list.filter(g=>g.name.toLocaleLowerCase('tr').includes(q));
+ list.sort((a,b)=>b.createdAt-a.createdAt);
+ $('count').textContent=list.length;
+ $('grid').innerHTML='';
+ $('empty').classList.toggle('hidden',list.length>0);
+
+ for(const g of list){
+  const c=document.createElement('div'); c.className='card';
+  const icon=g.type==='pdf'?'PDF':g.type==='url'?'URL':g.type==='iso'?'ISO':g.type==='pkg'?'PKG':'</>';
+  c.innerHTML=`
+   <button class="delete">🗑</button>
+   <div class="cover">${g.cover?`<img src="${g.cover}">`:icon}</div>
+   <div class="cardBody">
+    <div class="name">${esc(g.name)}</div>
+    <div class="kind">${g.type==='pdf'?'PDF':g.type==='url'?'URL Oyunu':g.type==='iso'?'ISO Dosyası':g.type==='pkg'?'PKG Dosyası':'HTML Oyunu'}</div>
+   </div>`;
+  c.onclick=e=>{if(!e.target.closest('.delete'))openDetails(g)};
+  c.querySelector('.delete').onclick=async e=>{
+   e.stopPropagation();
+   if(confirm(`"${g.name}" silinsin mi?`)){await remove(g.id);render()}
+  };
+  $('grid').appendChild(c)
+ }
+}
+
+function resetSource(){
+ mode='htmlfile'; selectedFile=null; pending=null;
+ $('htmlCode').value='';$('urlInput').value='';$('fileName').textContent='';$('filePicker').value='';
+ document.querySelectorAll('.choice').forEach(b=>b.classList.toggle('active',b.dataset.type==='htmlfile'));
+ updateMode()
+}
+function updateMode(){
+ $('fileArea').classList.toggle('hidden',!(mode==='htmlfile'||mode==='pdf'||mode==='iso'||mode==='pkg'));
+ $('codeArea').classList.toggle('hidden',mode!=='htmlcode');
+ $('urlArea').classList.toggle('hidden',mode!=='url');
+ const lang=localStorage.getItem('hl_lang')||'tr';
+ const labels={
+  tr:{pdf:'PDF dosyanı buraya bırak',html:'HTML dosyanı buraya bırak',iso:'ISO dosyanı buraya bırak',pkg:'PKG dosyanı buraya bırak'},
+  en:{pdf:'Drop your PDF file here',html:'Drop your HTML file here',iso:'Drop your ISO file here',pkg:'Drop your PKG file here'},
+  es:{pdf:'Suelta tu archivo PDF aquí',html:'Suelta tu archivo HTML aquí',iso:'Suelta tu archivo ISO aquí',pkg:'Suelta tu archivo PKG aquí'},
+  ru:{pdf:'Перетащите PDF-файл сюда',html:'Перетащите HTML-файл сюда',iso:'Перетащите ISO-файл сюда',pkg:'Перетащите PKG-файл сюда'},
+  zh:{pdf:'将 PDF 文件拖到这里',html:'将 HTML 文件拖到这里',iso:'将 ISO 文件拖到这里',pkg:'将 PKG 文件拖到这里'}
+ };
+ const L=labels[lang]||labels.tr;
+ if(mode==='pdf'){
+  $('filePicker').accept='.pdf,application/pdf';
+  $('dropLabel').textContent=L.pdf
+ }else if(mode==='htmlfile'){
+  $('filePicker').accept='.html,.htm,text/html';
+  $('dropLabel').textContent=L.html
+ }
+}
+$('addBtn').onclick=()=>{resetSource();$('sourceDialog').showModal()};
+$('sourceClose').onclick=$('sourceCancel').onclick=()=>$('sourceDialog').close();
+document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{
+ mode=b.dataset.type;selectedFile=null;$('fileName').textContent='';
+ document.querySelectorAll('.choice').forEach(x=>x.classList.toggle('active',x===b));updateMode()
+});
+$('drop').onclick=()=>$('filePicker').click();
+$('drop').ondragover=e=>{e.preventDefault();$('drop').classList.add('drag')};
+$('drop').ondragleave=()=>$('drop').classList.remove('drag');
+$('drop').ondrop=e=>{e.preventDefault();$('drop').classList.remove('drag');if(e.dataTransfer.files[0])chooseFile(e.dataTransfer.files[0])};
+$('filePicker').onchange=e=>e.target.files[0]&&chooseFile(e.target.files[0]);
+
+function chooseFile(f){
+ const ok=mode==='pdf'
+  ? (f.type==='application/pdf'||/\.pdf$/i.test(f.name))
+  : (f.type==='text/html'||/\.html?$/i.test(f.name));
+ if(!ok){alert(mode==='pdf'?'PDF dosyası seçmelisin.':'HTML dosyası seçmelisin.');return}
+ selectedFile=f;$('fileName').textContent='✓ '+f.name
+}
+
+$('nextBtn').onclick=async()=>{
+ if(mode==='htmlfile'){
+  if(!selectedFile){alert('Önce HTML dosyası seç.');return}
+  pending={type:'html',html:await readText(selectedFile),defaultName:selectedFile.name.replace(/\.html?$/i,'')}
+ }
+ if(mode==='pdf'){
+  if(!selectedFile){alert('Önce PDF seç.');return}
+  pending={type:'pdf',blob:selectedFile,defaultName:selectedFile.name.replace(/\.pdf$/i,'')}
+ }
+ if(mode==='iso'){
+   if(!selectedFile){alert('Önce ISO seç.');return}
+   pending={type:'iso',blob:selectedFile,defaultName:selectedFile.name.replace(/\.iso$/i,'')}
+ }
+ if(mode==='pkg'){
+   if(!selectedFile){alert('Önce PKG seç.');return}
+   pending={type:'pkg',blob:selectedFile,defaultName:selectedFile.name.replace(/\.pkg$/i,'')}
+ }
+ if(mode==='htmlcode'){
+  const code=$('htmlCode').value.trim();if(!code){alert('HTML kodunu yazmalısın.');return}
+  pending={type:'html',html:code,defaultName:'Yeni HTML Oyunu'}
+ }
+ if(mode==='url'){
+  let url=$('urlInput').value.trim();if(!url){alert('URL yazmalısın.');return}
+  if(!/^https?:\/\//i.test(url)) url='https://'+url;
+  pending={type:'url',url,defaultName:'URL Oyunu'}
+ }
+ $('sourceDialog').close();
+ $('gameName').value=pending.defaultName;
+ $('logoPicker').value='';$('coverPicker').value='';
+ $('logoPreview').innerHTML='🎮';$('coverPreview').innerHTML='🖼️';
+ $('detailsDialog').showModal()
+};
+
+$('detailsClose').onclick=()=>$('detailsDialog').close();
+$('backDetails').onclick=()=>{$('detailsDialog').close();$('sourceDialog').showModal()};
+$('logoPicker').onchange=async e=>{const d=await readData(e.target.files[0]);if(d)$('logoPreview').innerHTML=`<img src="${d}">`};
+$('coverPicker').onchange=async e=>{const d=await readData(e.target.files[0]);if(d)$('coverPreview').innerHTML=`<img src="${d}">`};
+
+$('finalSave').onclick=async()=>{
+ const name=$('gameName').value.trim();if(!name){alert('Bir ad yazmalısın.');return}
+ const logo=await readData($('logoPicker').files[0]);
+ const cover=await readData($('coverPicker').files[0]);
+ const id=(crypto&&crypto.randomUUID)?crypto.randomUUID():('game-'+Date.now()+'-'+Math.random().toString(16).slice(2));
+ const g={id,name,logo,cover,type:pending.type,createdAt:Date.now()};
+ if(pending.type==='html')g.html=pending.html;
+ if(pending.type==='pdf'||pending.type==='iso'||pending.type==='pkg')g.blob=pending.blob;
+ if(pending.type==='url')g.url=pending.url;
+ await put(g);pending=null;$('detailsDialog').close();render()
+};
+
+function openDetails(g){
+ selectedGame=g;
+ $('detailsName').textContent=g.name;
+ $('detailsLogo').innerHTML=g.logo?`<img src="${g.logo}">`:'🎮';
+ $('detailsHero').innerHTML=g.cover?`<img src="${g.cover}"><div class="detailsShade"></div>`:`🎮<div class="detailsShade"></div>`;
+ $('gameDetails').classList.remove('hidden')
+}
+$('detailsBack').onclick=()=>$('gameDetails').classList.add('hidden');
+
+function cleanupPdf(){if(pdfUrl){URL.revokeObjectURL(pdfUrl);pdfUrl=null}}
+$('playBtn').onclick=()=>{
+ if(!selectedGame)return;
+ $('gameDetails').classList.add('hidden');
+ $('viewerTitle').textContent=selectedGame.name;
+ $('viewer').classList.remove('hidden');
+ cleanupPdf();
+ $('htmlFrame').classList.add('hidden');$('urlFrame').classList.add('hidden');$('pdfFrame').classList.add('hidden');
+
+ if(selectedGame.type==='html'){
+  $('htmlFrame').classList.remove('hidden');
+  $('htmlFrame').srcdoc=selectedGame.html
+ }else if(selectedGame.type==='pdf'){
+  $('pdfFrame').classList.remove('hidden');
+  pdfUrl=URL.createObjectURL(selectedGame.blob);
+  $('pdfFrame').data=pdfUrl
+ }else if(selectedGame.type==='url'){
+  $('urlFrame').classList.remove('hidden');
+  $('urlFrame').src=selectedGame.url
+ }
+};
+
+$('viewerBack').onclick=()=>{
+ $('viewer').classList.add('hidden');
+ $('htmlFrame').srcdoc='';$('urlFrame').src='about:blank';$('pdfFrame').data='';
+ cleanupPdf();
+ if(selectedGame) $('gameDetails').classList.remove('hidden')
+};
+$('reload').onclick=()=>{
+ if(!selectedGame)return;
+ if(selectedGame.type==='html'){
+  const h=selectedGame.html;$('htmlFrame').srcdoc='';setTimeout(()=>$('htmlFrame').srcdoc=h,20)
+ }else if(selectedGame.type==='url'){
+  const u=selectedGame.url;$('urlFrame').src='about:blank';setTimeout(()=>$('urlFrame').src=u,20)
+ }else if(selectedGame.type==='pdf'){
+  $('pdfFrame').data='';setTimeout(()=>$('pdfFrame').data=pdfUrl,20)
+ }
+};
+$('full').onclick=async()=>{if(!document.fullscreenElement)await $('viewer').requestFullscreen();else await document.exitFullscreen()};
+$('search').oninput=render;
+
+const translations={
+ tr:{
+  addGame:'＋ Oyun Ekle',search:'Kütüphanede ara...',library:'Kütüphane',savedHere:'Kaydettiğin oyunlar burada',
+  addGameTitle:'Oyun Ekle',htmlFile:'HTML Dosyası',htmlCode:'HTML Kodu',cancel:'İptal',saveLibrary:'Kütüphaneye Kaydet',
+  gameInfo:'Oyun Bilgileri',cover:'Kapak Fotoğrafı',name:'Ad',back:'Geri',save:'Kaydet',play:'Oyna',reload:'Yenile',
+  fullscreen:'Tam Ekran',settings:'Ayarlar',language:'Dil',appearance:'Görünüm',normal:'Normal',dark:'Karanlık',
+  light:'Aydınlık',developerTitle:'Yapımcı',youtubeSubscribe:'YouTube kanalıma abone ol',gamesWord:'oyun',empty1:'Henüz oyun yok.',empty2:'“Oyun Ekle” ile ilk oyununu ekleyebilirsin.',chooseFile:'veya seçmek için tıkla',urlWarning:'Dikkat: Bu özellik çalışmaya bilir.'
+ },
+ en:{
+  addGame:'＋ Add Game',search:'Search library...',library:'Library',savedHere:'Your saved games appear here',
+  addGameTitle:'Add Game',htmlFile:'HTML File',htmlCode:'HTML Code',cancel:'Cancel',saveLibrary:'Save to Library',
+  gameInfo:'Game Info',cover:'Cover Image',name:'Name',back:'Back',save:'Save',play:'Play',reload:'Reload',
+  fullscreen:'Fullscreen',settings:'Settings',language:'Language',appearance:'Appearance',normal:'Normal',dark:'Dark',
+  light:'Light',developerTitle:'Developer',youtubeSubscribe:'Subscribe to my YouTube channel',gamesWord:'games',empty1:'No games yet.',empty2:'Use “Add Game” to add your first game.',chooseFile:'or click to choose a file',urlWarning:'Warning: This feature may not work.'
+ },
+ es:{
+  addGame:'＋ Añadir juego',search:'Buscar en la biblioteca...',library:'Biblioteca',savedHere:'Tus juegos guardados aparecen aquí',
+  addGameTitle:'Añadir juego',htmlFile:'Archivo HTML',htmlCode:'Código HTML',cancel:'Cancelar',saveLibrary:'Guardar en biblioteca',
+  gameInfo:'Información del juego',cover:'Imagen de portada',name:'Nombre',back:'Atrás',save:'Guardar',play:'Jugar',reload:'Recargar',
+  fullscreen:'Pantalla completa',settings:'Ajustes',language:'Idioma',appearance:'Apariencia',normal:'Normal',dark:'Oscuro',
+  light:'Claro',developerTitle:'Desarrollador',youtubeSubscribe:'Suscríbete a mi canal de YouTube',gamesWord:'juegos',empty1:'Todavía no hay juegos.',empty2:'Usa “Añadir juego” para agregar el primero.',chooseFile:'o haz clic para elegir un archivo',urlWarning:'Atención: Es posible que esta función no funcione.'
+ },
+ ru:{
+  addGame:'＋ Добавить игру',search:'Поиск в библиотеке...',library:'Библиотека',savedHere:'Сохранённые игры находятся здесь',
+  addGameTitle:'Добавить игру',htmlFile:'HTML-файл',htmlCode:'HTML-код',cancel:'Отмена',saveLibrary:'Сохранить в библиотеку',
+  gameInfo:'Информация об игре',cover:'Обложка',name:'Название',back:'Назад',save:'Сохранить',play:'Играть',reload:'Обновить',
+  fullscreen:'Полный экран',settings:'Настройки',language:'Язык',appearance:'Оформление',normal:'Обычный',dark:'Тёмный',
+  light:'Светлый',developerTitle:'Разработчик',youtubeSubscribe:'Подписаться на мой YouTube-канал',gamesWord:'игр',empty1:'Игр пока нет.',empty2:'Нажмите «Добавить игру», чтобы добавить первую.',chooseFile:'или нажмите, чтобы выбрать файл',urlWarning:'Внимание: эта функция может не работать.'
+ },
+ zh:{
+  addGame:'＋ 添加游戏',search:'搜索游戏库...',library:'游戏库',savedHere:'你保存的游戏会显示在这里',
+  addGameTitle:'添加游戏',htmlFile:'HTML 文件',htmlCode:'HTML 代码',cancel:'取消',saveLibrary:'保存到游戏库',
+  gameInfo:'游戏信息',cover:'封面图片',name:'名称',back:'返回',save:'保存',play:'开始游戏',reload:'重新加载',
+  fullscreen:'全屏',settings:'设置',language:'语言',appearance:'外观',normal:'默认',dark:'深色',
+  light:'浅色',developerTitle:'开发者',youtubeSubscribe:'订阅我的 YouTube 频道',gamesWord:'个游戏',empty1:'还没有游戏。',empty2:'点击“添加游戏”添加第一个游戏。',chooseFile:'或点击选择文件',urlWarning:'注意：此功能可能无法使用。'
+ }
+};
+function applyLanguage(lang){
+ const t=translations[lang]||translations.tr;
+ document.querySelectorAll('[data-i18n]').forEach(el=>{
+   const k=el.dataset.i18n;if(t[k])el.textContent=t[k];
+ });
+ document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+   const k=el.dataset.i18nPlaceholder;if(t[k])el.placeholder=t[k];
+ });
+ $('settingsBtn').title=t.settings||'Ayarlar';
+ document.documentElement.lang=lang;
+ localStorage.setItem('hl_lang',lang);
+}
+function applyTheme(theme){
+ document.body.classList.remove('theme-light','theme-dark');
+ if(theme==='light')document.body.classList.add('theme-light');
+ if(theme==='dark')document.body.classList.add('theme-dark');
+ document.querySelectorAll('.themeChoice').forEach(b=>b.classList.toggle('active',b.dataset.theme===theme));
+ localStorage.setItem('hl_theme',theme);
+}
+$('settingsBtn').onclick=()=>$('settingsPage').classList.remove('hidden');
+$('settingsBack').onclick=()=>$('settingsPage').classList.add('hidden');
+$('languageSelect').onchange=e=>{applyLanguage(e.target.value);updateMode()};
+document.querySelectorAll('.themeChoice').forEach(b=>b.onclick=()=>applyTheme(b.dataset.theme));
+const savedLang=localStorage.getItem('hl_lang')||'tr';
+const savedTheme=localStorage.getItem('hl_theme')||'normal';
+$('languageSelect').value=savedLang;
+applyLanguage(savedLang);applyTheme(savedTheme);
+
+openDB().then(render).catch(e=>{console.error(e);alert('Kütüphane açılamadı.')});
+</script>
+</body>
+</html>

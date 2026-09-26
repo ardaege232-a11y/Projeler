@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Rendering Engine</title>
+<style>
+:root{
+  --bg:#0a0c12;--panel:#111620;--panel2:#171e2b;--panel3:#0d1119;--line:#2a3342;
+  --text:#eef3fb;--muted:#8e9bad;--accent:#7b61ff;--accent2:#22d3ee;--danger:#ff5b6e;
+  --good:#4ade80;--warn:#fbbf24;--shadow:0 18px 55px #0008;--radius:14px;
+}
+body.theme-light{
+  --bg:#eef2f7;--panel:#ffffff;--panel2:#f6f8fb;--panel3:#edf1f6;--line:#d7dee8;
+  --text:#171b22;--muted:#687385;--accent:#6651e8;--accent2:#0891b2;--shadow:0 18px 55px #2232;
+}
+body.theme-normal{
+  --bg:#111827;--panel:#1f2937;--panel2:#273449;--panel3:#182132;--line:#3d4a5f;
+  --text:#f8fafc;--muted:#a9b4c4;--accent:#8b5cf6;--accent2:#38bdf8;--shadow:0 18px 55px #0006;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+#app{height:100%;display:grid;grid-template-rows:58px 1fr 26px}
+.topbar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line);box-shadow:0 2px 18px #0003;z-index:20}
+.brand{font-weight:950;letter-spacing:.3px;font-size:18px;white-space:nowrap}.brand span{color:var(--accent2)}
+.projectName{min-width:140px;max-width:260px;flex:1;background:var(--panel3);border:1px solid var(--line);color:var(--text);padding:9px 11px;border-radius:10px;outline:none}
+.projectName:focus{border-color:var(--accent)}
+.topbtn,.iconbtn,.smallbtn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:8px 11px;font-weight:750}
+.topbtn:hover,.iconbtn:hover,.smallbtn:hover{border-color:var(--accent);transform:translateY(-1px)}
+.topbtn.primary{border:0;background:linear-gradient(135deg,var(--accent),#5e7bff);color:#fff}.topbtn.good{border:0;background:linear-gradient(135deg,#16a34a,#0fba83);color:#fff}.topbtn.danger,.smallbtn.danger{border-color:#ff5b6e66;background:#ff5b6e18;color:#ff8b98}.topbtn.danger:hover,.smallbtn.danger:hover{border-color:var(--danger);background:#ff5b6e2b}
+.iconbtn{width:40px;height:40px;padding:0;font-size:19px}.spacer{flex:1}
+.workspace{min-height:0;display:grid;grid-template-columns:260px minmax(380px,1fr) 290px;gap:1px;background:var(--line)}
+.panel{background:var(--panel);min-height:0;overflow:hidden}
+.left,.right{display:flex;flex-direction:column}
+.panelHead{height:42px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--line);font-weight:850;font-size:13px}
+.panelHead .actions{display:flex;gap:6px}
+.panelHead button{padding:5px 8px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);color:var(--text)}
+.section{border-bottom:1px solid var(--line);min-height:0}.section.grow{flex:1;display:flex;flex-direction:column}
+.sectionTitle{padding:10px 11px 7px;color:var(--muted);font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+.tree,.assetList,.sceneList{overflow:auto;padding:4px 7px 10px}
+.tree{max-height:250px}.assetList{max-height:220px}.sceneList{flex:1}
+.row{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:8px;font-size:13px;cursor:pointer;user-select:none}
+.row:hover{background:var(--panel2)}.row.active{background:color-mix(in srgb,var(--accent) 22%,var(--panel2));outline:1px solid color-mix(in srgb,var(--accent) 48%,transparent)}
+.row .name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.row .meta{font-size:10px;color:var(--muted)}
+.row .kill{opacity:.0;border:0;background:transparent;color:var(--danger);font-weight:bold}.row:hover .kill{opacity:1}
+.dropzone{margin:6px 10px 10px;border:1px dashed #5a6b84;border-radius:11px;padding:12px;text-align:center;color:var(--muted);font-size:12px;background:var(--panel3)}
+.dropzone.drag{border-color:var(--accent2);color:var(--text);background:color-mix(in srgb,var(--accent2) 10%,var(--panel3))}
+.dropzone button{margin-top:8px}
+.center{display:grid;grid-template-rows:42px 1fr;min-width:0}
+.viewTabs{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--panel);border-bottom:1px solid var(--line)}
+.viewTab{border:1px solid transparent;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;font-weight:800}
+.viewTab.active{background:var(--panel2);border-color:var(--line);color:var(--text)}
+.viewArea{min-height:0;position:relative;background:var(--panel3)}
+.editorWrap,.sceneWrap,.previewWrap{position:absolute;inset:0;display:none}.editorWrap.active,.sceneWrap.active,.previewWrap.active{display:block}
+.editorTop{height:38px;display:flex;align-items:center;gap:8px;padding:5px 8px;border-bottom:1px solid var(--line);background:var(--panel)}
+.fileBadge{font-size:12px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#codeEditor{position:absolute;left:0;right:0;top:38px;bottom:0;width:100%;height:calc(100% - 38px);resize:none;border:0;outline:0;padding:16px 18px;background:#070a10;color:#e7eef9;font:14px/1.55 ui-monospace,SFMono-Regular,Consolas,Monaco,monospace;tab-size:2;caret-color:#fff}
+body.theme-light #codeEditor{background:#fbfcfe;color:#111827}
+.sceneWrap{background:radial-gradient(circle at 50% 20%,#17243b 0,#0a0f18 45%,#05070b 100%)}
+#sceneCanvas{width:100%;height:100%;display:block;touch-action:none}
+.sceneHud{position:absolute;left:10px;top:10px;display:flex;gap:7px;flex-wrap:wrap;pointer-events:none}.pill{background:#06101dcc;border:1px solid #ffffff22;color:#dce7f4;padding:6px 8px;border-radius:8px;font-size:11px}
+.sceneTools{position:absolute;right:10px;top:10px;display:flex;gap:6px}.sceneTools button{border:1px solid #ffffff22;background:#07101dcc;color:#fff;border-radius:9px;padding:8px 10px}
+.previewWrap{background:#fff}.previewBar{height:38px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:7px;padding:5px 8px}.previewBar span{font-size:12px;color:var(--muted);flex:1}
+#previewFrame{position:absolute;left:0;right:0;top:38px;bottom:0;width:100%;height:calc(100% - 38px);border:0;background:#fff}
+.inspector{padding:10px;overflow:auto}.emptyInspector{color:var(--muted);font-size:13px;line-height:1.5;padding:8px}
+.field{margin-bottom:10px}.field label{display:block;font-size:11px;color:var(--muted);font-weight:800;margin-bottom:5px}.field input,.field select{width:100%;background:var(--panel3);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 9px;outline:none}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.console{height:160px;overflow:auto;background:#070a10;color:#b7c4d6;font:11px/1.45 ui-monospace,Consolas,monospace;padding:9px;border-top:1px solid var(--line)}
+.console .err{color:#ff8997}.console .ok{color:#71e8a3}.console .warn{color:#ffd36f}
+.status{display:flex;align-items:center;gap:16px;padding:0 10px;background:var(--panel);color:var(--muted);border-top:1px solid var(--line);font-size:11px}.status .rightStatus{margin-left:auto}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;padding:18px;z-index:100}.modal.show{display:flex}.modalBox{width:min(620px,96vw);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+.modalHead{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line)}.modalHead h2{margin:0;font-size:18px}.modalBody{padding:18px}.modalFoot{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--line)}
+.settingsGrid{display:grid;gap:13px}.settingCard{background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:14px}.settingCard h3{margin:0 0 8px;font-size:14px}.settingCard p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+.yt{display:inline-block;margin-top:10px;background:#ff0033;color:#fff;text-decoration:none;font-weight:900;padding:11px 15px;border-radius:10px}.devbox{border:1px solid var(--line);background:var(--panel3);border-radius:11px;padding:12px;margin-top:9px}.devbox b{color:var(--accent2)}
+.projectCards{display:grid;gap:9px}.projectCard{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:12px}.projectCard .info{flex:1;min-width:0}.projectCard strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.projectCard small{color:var(--muted)}.exportChoices{display:grid;grid-template-columns:1fr 1fr;gap:12px}.exportChoice{min-height:112px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);color:var(--text);text-align:left}.exportChoice:hover{border-color:var(--accent);transform:translateY(-2px)}.exportChoice .big{display:block;font-size:28px;margin-bottom:7px}.exportChoice strong{display:block;font-size:15px;margin-bottom:5px}.exportChoice small{display:block;color:var(--muted);line-height:1.4}@media(max-width:520px){.exportChoices{grid-template-columns:1fr}}
+.toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;background:#05080ee8;color:#fff;border:1px solid #ffffff24;border-radius:10px;padding:10px 14px;z-index:200;transition:.2s}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.ctx{position:fixed;z-index:300;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:10px;padding:5px;display:none}.ctx button{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--text);padding:8px 10px;border-radius:7px}.ctx button:hover{background:var(--panel2)}
+/* Responsive / mobile workspace */
+.mobileDock,.mobileDrawerClose,.mobileBackdrop{display:none}
+@media(max-width:980px){
+  .workspace{grid-template-columns:220px 1fr}
+  .right{display:none}
+  .topbar .hideSmall{display:none}
+}
+@media(max-width:720px){
+  html,body{height:100%;height:100dvh;overscroll-behavior:none}
+  #app{height:100%;height:100dvh;grid-template-rows:56px minmax(0,1fr) 24px 64px}
+  .topbar{gap:5px;padding:6px max(7px,env(safe-area-inset-right)) 6px max(7px,env(safe-area-inset-left));min-width:0}
+  .brand{font-size:14px;max-width:74px;overflow:hidden;text-overflow:ellipsis}
+  .projectName{min-width:0;max-width:none;width:100%;padding:9px;font-size:16px}
+  .topbtn,.iconbtn{width:40px;height:40px;min-width:40px;padding:0;display:grid;place-items:center;font-size:17px}
+  .topbtn b,.topbtn .mobileHideText{display:none}
+  .topbar .hideSmall{display:none}
+  .spacer{display:none}
+  .workspace{grid-template-columns:1fr;min-width:0;position:relative}
+  .center{grid-template-rows:1fr;min-width:0}
+  .viewTabs{display:none}
+  .viewArea{min-width:0}
+  .left,.right{
+    display:flex!important;position:fixed;top:56px;bottom:64px;width:min(88vw,360px);z-index:90;
+    box-shadow:0 18px 55px #000b;transition:transform .22s ease;overscroll-behavior:contain
+  }
+  .left{left:0;transform:translateX(-105%);border-right:1px solid var(--line)}
+  .right{right:0;transform:translateX(105%);border-left:1px solid var(--line)}
+  .left.mobile-open,.right.mobile-open{transform:translateX(0)}
+  .mobileDrawerClose{display:grid;place-items:center;position:absolute;top:7px;right:8px;z-index:5;width:32px;height:32px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);font-size:19px}
+  .mobileBackdrop{display:block;position:fixed;inset:56px 0 64px;background:#0008;z-index:85;opacity:0;pointer-events:none;transition:opacity .2s}
+  .mobileBackdrop.show{opacity:1;pointer-events:auto}
+  .panelHead{min-height:44px;height:auto;padding:9px 10px}
+  .left .panelHead:first-of-type,.right .panelHead:first-of-type{padding-right:48px}
+  .tree{max-height:28vh}.assetList{max-height:22vh}
+  .tree,.assetList,.sceneList,.inspector,.console{-webkit-overflow-scrolling:touch}
+  .row{min-height:44px;padding:10px 9px}
+  .row .kill{opacity:1;min-width:34px;min-height:34px;font-size:18px}
+  .dropzone{padding:16px 10px}.smallbtn{min-height:38px}
+  .right .inspector{flex:1;min-height:0}.right .console{height:34%;min-height:130px;flex:none}
+  .editorTop{height:44px;padding:5px 7px}
+  #codeEditor{top:44px;height:calc(100% - 44px);padding:14px 12px 90px;font-size:16px;line-height:1.5;-webkit-overflow-scrolling:touch}
+  .previewBar{height:44px}.previewBar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#previewFrame{top:44px;height:calc(100% - 44px)}
+  .sceneHud{left:8px;top:8px;right:52px;gap:5px}.pill{font-size:10px;padding:5px 7px}
+  .sceneTools{right:8px;top:8px;flex-direction:column}.sceneTools button{width:40px;height:40px;padding:0;font-size:18px}
+  .status{gap:8px;padding:0 8px;font-size:10px;min-width:0}.status .rightStatus{display:none}#cursorState{margin-left:auto}
+  .mobileDock{display:grid;grid-template-columns:repeat(6,1fr);align-items:stretch;background:var(--panel);border-top:1px solid var(--line);padding:4px max(4px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left));z-index:70}
+  .mobileDock button{border:0;background:transparent;color:var(--muted);border-radius:10px;min-width:0;padding:3px 1px;display:grid;place-items:center;align-content:center;gap:1px;font-size:19px}
+  .mobileDock button span{font-size:9px;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mobileDock button.active{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--text)}
+  .modal{padding:0;align-items:flex-end}.modalBox{width:100%!important;max-height:min(88dvh,760px);border-radius:20px 20px 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom)}
+  .modalHead{padding:14px 16px}.modalBody{padding:15px}.modalFoot{padding:12px 15px}
+  .settingCard select,.field input,.field select{font-size:16px;min-height:44px}
+  .exportChoices{grid-template-columns:1fr}.exportChoice{min-height:94px}
+  .projectCard{align-items:stretch;flex-wrap:wrap}.projectCard .info{flex-basis:100%}.projectCard .smallbtn{flex:1}
+  .toast{bottom:78px;max-width:88vw;text-align:center}
+  .ctx{display:none!important}
+}
+@media(max-width:430px){
+  .brand{display:none}
+  .topbar{grid-template-columns:1fr;}
+  .projectName{flex:1}
+  .mobileDock button span{font-size:8px}
+}
+@media(max-width:720px) and (orientation:landscape){
+  #app{grid-template-rows:50px minmax(0,1fr) 22px 56px}
+  .left,.right{top:50px;bottom:56px;width:min(70vw,360px)}
+  .mobileBackdrop{inset:50px 0 56px}
+  .topbar{padding-top:4px;padding-bottom:4px}.topbtn,.iconbtn{height:38px;width:38px;min-width:38px}
+  .mobileDock{padding-top:2px;padding-bottom:2px}.mobileDock button{font-size:17px}
+}
+</style>
+</head>
+<body class="theme-dark">
+<div id="app">
+  <header class="topbar">
+    <div class="brand">Rendering <span>Engine</span></div>
+    <input id="projectName" class="projectName" value="My Project" aria-label="Project name" data-i18n-aria="projectName" />
+    <button id="projectsBtn" class="topbtn hideSmall" title="Projects" data-i18n-title="projects"><span>📁</span><b data-i18n="projects">Projects</b></button>
+    <button id="saveBtn" class="topbtn" title="Save" data-i18n-title="save"><span>💾</span><b data-i18n="save">Save</b></button>
+    <button id="runBtn" class="topbtn primary"><span>▶</span> <b data-i18n="run">Run</b></button>
+    <button id="exportBtn" class="topbtn good"><span>⬇</span> <b data-i18n="export">Export HTML</b></button>
+    <div class="spacer"></div>
+    <button id="settingsBtn" class="iconbtn" title="Settings" data-i18n-title="settings">⚙️</button>
+  </header>
+
+  <main class="workspace">
+    <aside class="panel left" id="mobileLeftDrawer">
+      <button class="mobileDrawerClose" data-mobile-close aria-label="Close" data-i18n-aria="close">×</button>
+      <section class="section">
+        <div class="panelHead"><span data-i18n="projectFiles">Project Files</span><div class="actions"><button id="addFileBtn">＋</button></div></div>
+        <div id="fileTree" class="tree"></div>
+      </section>
+      <section class="section">
+        <div class="panelHead"><span data-i18n="assets">Assets</span><div class="actions"><button id="assetPickBtn">＋</button></div></div>
+        <input id="assetPicker" type="file" multiple accept="image/*,.obj,.gltf,.glb,.fbx,.json,.txt,.bin" class="hidden" />
+        <div id="dropzone" class="dropzone"><span data-i18n="dropAssets">Drop model/image files here</span><br><button class="smallbtn" id="assetPickBtn2" data-i18n="chooseFiles">Choose Files</button></div>
+        <div id="assetList" class="assetList"></div>
+      </section>
+      <section class="section grow">
+        <div class="panelHead"><span data-i18n="scene">Scene</span><div class="actions"><button id="addCubeBtn" data-i18n="cube">Cube</button><button id="addSpriteBtn" data-i18n="imageShort">Img</button></div></div>
+        <div id="sceneList" class="sceneList"></div>
+      </section>
+    </aside>
+
+    <section class="panel center">
+      <div class="viewTabs">
+        <button class="viewTab active" data-view="editor" data-i18n="code">Code</button>
+        <button class="viewTab" data-view="scene" data-i18n="sceneView">Scene View</button>
+        <button class="viewTab" data-view="preview" data-i18n="preview">Preview</button>
+      </div>
+      <div class="viewArea">
+        <div id="editorView" class="editorWrap active">
+          <div class="editorTop"><div id="currentFileBadge" class="fileBadge">main.html</div><button id="renameFileBtn" class="smallbtn" data-i18n="rename">Rename</button></div>
+          <textarea id="codeEditor" spellcheck="false"></textarea>
+        </div>
+        <div id="sceneView" class="sceneWrap">
+          <canvas id="sceneCanvas"></canvas>
+          <div class="sceneHud"><div class="pill" id="orbitHint">LMB drag: orbit</div><div class="pill" id="zoomHint">Wheel: zoom</div><div class="pill" id="sceneStats">0 objects</div></div>
+          <div class="sceneTools"><button id="focusBtn">◎</button><button id="gridBtn">#</button></div>
+        </div>
+        <div id="previewView" class="previewWrap">
+          <div class="previewBar"><span data-i18n="sandboxPreview">Sandboxed project preview</span><button id="reloadPreviewBtn" class="smallbtn">↻</button><button id="fullPreviewBtn" class="smallbtn">⛶</button></div>
+          <iframe id="previewFrame" sandbox="allow-scripts allow-forms allow-modals allow-pointer-lock allow-downloads"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel right" id="mobileRightDrawer">
+      <button class="mobileDrawerClose" data-mobile-close aria-label="Close" data-i18n-aria="close">×</button>
+      <div class="panelHead"><span data-i18n="inspector">Inspector</span></div>
+      <div id="inspector" class="inspector"><div class="emptyInspector" data-i18n="selectObject">Select a scene object.</div></div>
+      <div class="panelHead"><span data-i18n="console">Console</span><div class="actions"><button id="clearConsoleBtn">×</button></div></div>
+      <div id="console" class="console"></div>
+    </aside>
+  </main>
+
+  <footer class="status"><span id="saveState">Ready</span><span id="cursorState">Ln 1, Col 1</span><span class="rightStatus">Rendering Engine • <span data-i18n="developerLabel">Developer</span>: Çınar Gülser</span></footer>
+  <nav class="mobileDock" id="mobileDock" aria-label="Mobile workspace navigation" data-i18n-aria="mobileNavigation">
+    <button type="button" data-mobile-action="files">📂<span data-i18n="projectFiles">Files</span></button>
+    <button type="button" data-mobile-view="editor" class="active">⌨️<span data-i18n="code">Code</span></button>
+    <button type="button" data-mobile-view="scene">🧊<span data-i18n="scene">Scene</span></button>
+    <button type="button" data-mobile-view="preview">▶️<span data-i18n="preview">Preview</span></button>
+    <button type="button" data-mobile-action="inspector">🎛️<span data-i18n="inspector">Inspector</span></button>
+    <button type="button" data-mobile-action="projects">🗂️<span data-i18n="projects">Projects</span></button>
+  </nav>
+</div>
+<div id="mobileBackdrop" class="mobileBackdrop"></div>
+
+<div id="settingsModal" class="modal">
+  <div class="modalBox">
+    <div class="modalHead"><h2>⚙️ <span data-i18n="settings">Settings</span></h2><button class="iconbtn modalClose">×</button></div>
+    <div class="modalBody settingsGrid">
+      <div class="settingCard"><h3 data-i18n="language">Language</h3><select id="languageSelect"><option value="tr">🇹🇷 Türkçe</option><option value="en">🇬🇧 English</option><option value="ru">🇷🇺 Русский</option></select></div>
+      <div class="settingCard"><h3 data-i18n="appearance">Appearance</h3><select id="themeSelect"><option value="normal" data-i18n="normal">Normal</option><option value="dark" data-i18n="dark">Dark</option><option value="light" data-i18n="light">Light</option></select></div>
+      <div class="settingCard"><h3>YouTube</h3><p data-i18n="youtubeInfo">You can open the developer's YouTube channel.</p><a class="yt" href="https://m.youtube.com/@sideflock17" target="_blank" rel="noopener" data-i18n="subscribe">Subscribe to my YouTube channel</a></div>
+      <div class="settingCard"><h3 data-i18n="developerBox">Developer Box</h3><div class="devbox"><span data-i18n="developerLabel">Developer</span>: <b>Çınar Gülser</b></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="projectsModal" class="modal">
+  <div class="modalBox">
+    <div class="modalHead"><h2 data-i18n="projects">Projects</h2><button class="iconbtn modalClose">×</button></div>
+    <div class="modalBody"><button id="newProjectBtn" class="topbtn primary" data-i18n="newProject">New Project</button><div id="projectCards" class="projectCards" style="margin-top:14px"></div></div>
+  </div>
+</div>
+
+<div id="exportModal" class="modal">
+  <div class="modalBox" style="width:min(600px,96vw)">
+    <div class="modalHead"><h2>⬇️ <span data-i18n="exportTitle">Projeyi Dışa Aktar</span></h2><button class="iconbtn modalClose">×</button></div>
+    <div class="modalBody">
+      <p style="margin-top:0;color:var(--muted)" data-i18n="exportQuestion">HTML kodunu mu kopyalayacaksın, HTML dosyasını mı indireceksin?</p>
+      <div class="exportChoices">
+        <button id="copyHtmlBtn" class="exportChoice"><span class="big">📋</span><strong data-i18n="copyHtml">HTML kodunu kopyala</strong><small data-i18n="copyHtmlInfo">Hazırlanan tek HTML kodunu panoya kopyalar.</small></button>
+        <button id="downloadHtmlBtn" class="exportChoice"><span class="big">⬇️</span><strong data-i18n="downloadHtml">HTML dosyasını indir</strong><small data-i18n="downloadHtmlInfo">Projeyi çalışabilir tek bir .html dosyası olarak indirir.</small></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="newFileModal" class="modal">
+  <div class="modalBox" style="width:min(430px,96vw)">
+    <div class="modalHead"><h2 data-i18n="newFile">New File</h2><button class="iconbtn modalClose">×</button></div>
+    <div class="modalBody"><div class="field"><label data-i18n="fileName">File name</label><input id="newFileName" value="script.js" /></div><div class="field"><label data-i18n="fileType">File type</label><select id="newFileType"><option value="html">HTML</option><option value="css">CSS</option><option value="js">JS (.js)</option><option value="javascript">JavaScript (.js)</option><option value="text" data-i18n="textFile">Text</option></select></div></div>
+    <div class="modalFoot"><button id="createFileBtn" class="topbtn primary" data-i18n="create">Create</button></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<div id="ctx" class="ctx"><button id="ctxRename" data-i18n="rename">Rename</button><button id="ctxDelete" data-i18n="delete">Delete</button></div>
+
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id), $$=q=>[...document.querySelectorAll(q)];
+const LS_PROJECTS='renderingEngineProjectsV1',LS_SETTINGS='renderingEngineSettingsV1';
+const defaultFiles={
+  'main.html':{type:'html',content:`<main class="game">
+  <h1>Rendering Engine Project</h1>
+  <p>Edit HTML, CSS and JavaScript. Then press Run.</p>
+  <button id="helloBtn">Test Button</button>
+</main>`},
+  'style.css':{type:'css',content:`html,body{margin:0;min-height:100%;font-family:Arial,sans-serif;background:#0b1020;color:white}
+.game{min-height:100vh;display:grid;place-items:center;align-content:center;gap:12px;text-align:center;background:radial-gradient(circle at 50% 25%,#233763,#0b1020 60%)}
+button{border:0;border-radius:10px;padding:12px 18px;font-weight:bold;cursor:pointer}`},
+  'script.js':{type:'js',content:`document.getElementById('helloBtn')?.addEventListener('click',()=>{
+  alert('Rendering Engine says hello!');
+});`}
+};
+const i18n={
+tr:{
+projects:'Projeler',save:'Kaydet',run:'Çalıştır',export:'HTML İndir',projectFiles:'Proje Dosyaları',assets:'Varlıklar',dropAssets:'Model veya görsel dosyalarını buraya bırak',chooseFiles:'Dosya Seç',scene:'Sahne',code:'Kod',sceneView:'Sahne Görünümü',preview:'Önizleme',rename:'Yeniden Adlandır',sandboxPreview:'Korumalı proje önizlemesi',inspector:'Denetleyici',selectObject:'Bir sahne nesnesi seç.',console:'Konsol',settings:'Ayarlar',language:'Dil',appearance:'Görünüm',normal:'Normal',dark:'Karanlık',light:'Aydınlık',youtubeInfo:'Yapımcının YouTube kanalını açabilirsin.',subscribe:'YouTube kanalıma abone ol',developerBox:'Yapımcı Kutucuğu',developerLabel:'Yapımcı',newProject:'Yeni Proje',newFile:'Yeni Dosya',fileName:'Dosya adı',fileType:'Dosya türü',textFile:'Metin',create:'Oluştur',delete:'Sil',ready:'Hazır',saved:'Kaydedildi',unsaved:'Kaydedilmedi',exported:'HTML indirildi',assetAdded:'Varlık eklendi',selectImage:'Önce Varlıklar bölümünden bir görsel veya OBJ seç.',objOnly:'3D önizleme şu an yalnızca görsel ve OBJ modelini destekliyor.',projectLoaded:'Proje yüklendi',projectDeleted:'Proje silindi',fileExists:'Bu isimde dosya zaten var.',cannotDeleteMain:'main.html silinemez.',confirmDelete:'Bunu silmek istediğine emin misin?',deleteProject:'Projeyi Sil',confirmDeleteProject:'Bu projeyi silmek istediğine emin misin? Bu işlem geri alınamaz.',exportTitle:'Projeyi Dışa Aktar',exportQuestion:'HTML kodunu mu kopyalayacaksın, HTML dosyasını mı indireceksin?',copyHtml:'HTML kodunu kopyala',copyHtmlInfo:'Hazırlanan tek HTML kodunu panoya kopyalar.',downloadHtml:'HTML dosyasını indir',downloadHtmlInfo:'Projeyi çalışabilir tek bir .html dosyası olarak indirir.',copied:'HTML kodu panoya kopyalandı',copyFailed:'Kopyalama başarısız oldu.',assetHelp:'Görseller sprite olarak eklenebilir. OBJ dosyaları tel-kafes model olarak önizlenir.',cube:'Küp',imageShort:'Görsel',close:'Kapat',projectName:'Proje adı',mobileNavigation:'Mobil çalışma alanı menüsü',open:'Aç',noProjects:'Henüz kaydedilmiş proje yok.',objects:'nesne',emptyScene:'Boş Sahne',name:'Ad',position:'Konum',rotation:'Döndürme',scale:'Ölçek',color:'Renk',type:'Tür',orbitDesktop:'Sol tuş sürükle: döndür',zoomDesktop:'Tekerlek: yakınlaştır',orbitMobile:'1 parmak: döndür',zoomMobile:'2 parmak: yakınlaştır',line:'Sat',column:'Süt',selectedAsset:'Seçilen varlık',projectSavedLog:'projesi kaydedildi',renderingReady:'Rendering Engine hazır',assetTip:'İpucu: İçeri aktarılan varlıklara JavaScript içinde asset("dosya.png") ile erişebilirsin.',newProjectDefault:'Projem',untitledProject:'Adsız Proje',newCssComment:'Yeni CSS dosyası',newJsComment:'Yeni JavaScript dosyası',newHtmlText:'Yeni HTML dosyası',exportLog:'Dışa aktarıldı',copyLog:'HTML kodu panoya kopyalandı',copyFailLog:'Kopyalama başarısız',assetLog:'Varlık',selected:'Seçildi',focusScene:'Sahneyi ortala',toggleGrid:'Izgarayı aç/kapat',reload:'Yenile',fullscreen:'Tam ekran'
+},
+en:{
+projects:'Projects',save:'Save',run:'Run',export:'Export HTML',projectFiles:'Project Files',assets:'Assets',dropAssets:'Drop model or image files here',chooseFiles:'Choose Files',scene:'Scene',code:'Code',sceneView:'Scene View',preview:'Preview',rename:'Rename',sandboxPreview:'Sandboxed project preview',inspector:'Inspector',selectObject:'Select a scene object.',console:'Console',settings:'Settings',language:'Language',appearance:'Appearance',normal:'Normal',dark:'Dark',light:'Light',youtubeInfo:"You can open the developer's YouTube channel.",subscribe:'Subscribe to my YouTube channel',developerBox:'Developer Box',developerLabel:'Developer',newProject:'New Project',newFile:'New File',fileName:'File name',fileType:'File type',textFile:'Text',create:'Create',delete:'Delete',ready:'Ready',saved:'Saved',unsaved:'Unsaved',exported:'HTML exported',assetAdded:'Asset added',selectImage:'Select an image or OBJ asset first.',objOnly:'3D preview currently supports image and OBJ assets.',projectLoaded:'Project loaded',projectDeleted:'Project deleted',fileExists:'A file with this name already exists.',cannotDeleteMain:'main.html cannot be deleted.',confirmDelete:'Are you sure you want to delete this?',deleteProject:'Delete Project',confirmDeleteProject:'Are you sure you want to delete this project? This cannot be undone.',exportTitle:'Export Project',exportQuestion:'Do you want to copy the HTML code or download the HTML file?',copyHtml:'Copy HTML code',copyHtmlInfo:'Copies the generated single-file HTML code to the clipboard.',downloadHtml:'Download HTML file',downloadHtmlInfo:'Downloads the project as one runnable .html file.',copied:'HTML code copied to clipboard',copyFailed:'Copy failed.',assetHelp:'Images can be added as sprites. OBJ files render as wireframe models.',cube:'Cube',imageShort:'Image',close:'Close',projectName:'Project name',mobileNavigation:'Mobile workspace navigation',open:'Open',noProjects:'No saved projects yet.',objects:'objects',emptyScene:'Empty Scene',name:'Name',position:'Position',rotation:'Rotation',scale:'Scale',color:'Color',type:'Type',orbitDesktop:'LMB drag: orbit',zoomDesktop:'Wheel: zoom',orbitMobile:'1 finger: orbit',zoomMobile:'2 fingers: zoom',line:'Ln',column:'Col',selectedAsset:'Selected asset',projectSavedLog:'saved',renderingReady:'Rendering Engine ready',assetTip:'Tip: use asset("filename.png") inside JavaScript to access imported assets.',newProjectDefault:'My Project',untitledProject:'Untitled Project',newCssComment:'New CSS file',newJsComment:'New JavaScript file',newHtmlText:'New HTML file',exportLog:'Exported',copyLog:'HTML code copied to clipboard',copyFailLog:'Copy failed',assetLog:'Asset',selected:'Selected',focusScene:'Focus scene',toggleGrid:'Toggle grid',reload:'Reload',fullscreen:'Fullscreen'
+},
+ru:{
+projects:'Проекты',save:'Сохранить',run:'Запустить',export:'Скачать HTML',projectFiles:'Файлы проекта',assets:'Ресурсы',dropAssets:'Перетащите сюда модель или изображение',chooseFiles:'Выбрать файлы',scene:'Сцена',code:'Код',sceneView:'Вид сцены',preview:'Предпросмотр',rename:'Переименовать',sandboxPreview:'Изолированный предпросмотр проекта',inspector:'Инспектор',selectObject:'Выберите объект сцены.',console:'Консоль',settings:'Настройки',language:'Язык',appearance:'Внешний вид',normal:'Обычный',dark:'Тёмный',light:'Светлый',youtubeInfo:'Можно открыть YouTube-канал разработчика.',subscribe:'Подписаться на мой YouTube-канал',developerBox:'Разработчик',developerLabel:'Разработчик',newProject:'Новый проект',newFile:'Новый файл',fileName:'Имя файла',fileType:'Тип файла',textFile:'Текст',create:'Создать',delete:'Удалить',ready:'Готово',saved:'Сохранено',unsaved:'Не сохранено',exported:'HTML скачан',assetAdded:'Ресурс добавлен',selectImage:'Сначала выберите изображение или OBJ в разделе ресурсов.',objOnly:'3D-предпросмотр сейчас поддерживает изображения и OBJ.',projectLoaded:'Проект загружен',projectDeleted:'Проект удалён',fileExists:'Файл с таким именем уже существует.',cannotDeleteMain:'main.html нельзя удалить.',confirmDelete:'Вы уверены, что хотите удалить это?',deleteProject:'Удалить проект',confirmDeleteProject:'Удалить этот проект? Это действие нельзя отменить.',exportTitle:'Экспорт проекта',exportQuestion:'Скопировать HTML-код или скачать HTML-файл?',copyHtml:'Скопировать HTML-код',copyHtmlInfo:'Копирует готовый код одного HTML-файла в буфер обмена.',downloadHtml:'Скачать HTML-файл',downloadHtmlInfo:'Скачивает проект как один запускаемый .html-файл.',copied:'HTML-код скопирован',copyFailed:'Не удалось скопировать.',assetHelp:'Изображения можно добавлять как спрайты. OBJ отображаются каркасом.',cube:'Куб',imageShort:'Изобр.',close:'Закрыть',projectName:'Название проекта',mobileNavigation:'Мобильная навигация рабочей области',open:'Открыть',noProjects:'Сохранённых проектов пока нет.',objects:'объектов',emptyScene:'Пустая сцена',name:'Имя',position:'Позиция',rotation:'Вращение',scale:'Масштаб',color:'Цвет',type:'Тип',orbitDesktop:'ЛКМ + перетаскивание: вращение',zoomDesktop:'Колесо: масштаб',orbitMobile:'1 палец: вращение',zoomMobile:'2 пальца: масштаб',line:'Стр',column:'Стлб',selectedAsset:'Выбран ресурс',projectSavedLog:'сохранён',renderingReady:'Rendering Engine готов',assetTip:'Совет: используйте asset("filename.png") в JavaScript для доступа к импортированным ресурсам.',newProjectDefault:'Мой проект',untitledProject:'Безымянный проект',newCssComment:'Новый CSS-файл',newJsComment:'Новый JavaScript-файл',newHtmlText:'Новый HTML-файл',exportLog:'Экспортирован',copyLog:'HTML-код скопирован в буфер обмена',copyFailLog:'Ошибка копирования',assetLog:'Ресурс',selected:'Выбран',focusScene:'Центрировать сцену',toggleGrid:'Показать/скрыть сетку',reload:'Обновить',fullscreen:'Полный экран'
+}
+};
+let settings={lang:'tr',theme:'dark'};
+try{settings={...settings,...JSON.parse(localStorage.getItem(LS_SETTINGS)||'{}')}}catch(e){}
+if(!i18n[settings.lang])settings.lang='tr';
+if(!['normal','dark','light'].includes(settings.theme))settings.theme='dark';
+let project=createBlankProject('My Project');
+let currentFile='main.html',selectedObjectId=null,selectedAssetId=null,dirty=false,ctxFile=null;
+let camera={yaw:.65,pitch:.35,zoom:4.5,showGrid:true},drag=null;
+const imageCache=new Map();
+function uid(){return 'id_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8)}
+function cloneDefaultFiles(){return JSON.parse(JSON.stringify(defaultFiles))}
+function createBlankProject(name){return {id:uid(),name,files:cloneDefaultFiles(),scene:[{id:uid(),kind:'cube',name:'Cube',x:0,y:0,z:0,rx:0,ry:25,rz:0,s:1,color:'#7b61ff'}],createdAt:Date.now(),updatedAt:Date.now()}}
+function t(k){return i18n[settings.lang]?.[k]||i18n.en[k]||k}
+function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),1600)}
+function log(msg,type=''){const d=document.createElement('div');if(type)d.className=type;d.textContent='› '+msg;$('console').appendChild(d);$('console').scrollTop=$('console').scrollHeight}
+function markDirty(){dirty=true;$('saveState').textContent='● '+t('unsaved')}
+function applyLanguage(){
+  document.documentElement.lang=settings.lang;
+  $$('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;el.textContent=t(k)});
+  $$('[data-i18n-title]').forEach(el=>{el.title=t(el.dataset.i18nTitle)});
+  $$('[data-i18n-aria]').forEach(el=>{el.setAttribute('aria-label',t(el.dataset.i18nAria))});
+  $$('[data-i18n-placeholder]').forEach(el=>{el.placeholder=t(el.dataset.i18nPlaceholder)});
+  if($('languageSelect'))$('languageSelect').value=settings.lang;
+  if($('themeSelect'))$('themeSelect').value=settings.theme;
+  $('saveState').textContent=dirty?'● '+t('unsaved'):t('ready');
+  renderAll();
+  updateMobileHints();
+}
+function applyTheme(){document.body.className='theme-'+settings.theme;localStorage.setItem(LS_SETTINGS,JSON.stringify(settings))}
+function saveSettings(){localStorage.setItem(LS_SETTINGS,JSON.stringify(settings));applyTheme();applyLanguage()}
+function loadProjects(){try{return JSON.parse(localStorage.getItem(LS_PROJECTS)||'{}')}catch(e){return {}}}
+function saveProject(){syncEditor();project.name=$('projectName').value.trim()||t('untitledProject');project.updatedAt=Date.now();const all=loadProjects();all[project.id]=project;localStorage.setItem(LS_PROJECTS,JSON.stringify(all));dirty=false;$('saveState').textContent=t('saved');toast(t('saved'));renderProjects();log(project.name+' '+t('projectSavedLog'),'ok')}
+function loadProject(id){syncEditor();const all=loadProjects();if(!all[id])return;project=all[id];$('projectName').value=project.name;currentFile=project.files['main.html']?'main.html':Object.keys(project.files)[0];selectedObjectId=null;selectedAssetId=null;dirty=false;renderAll();switchView('editor');closeModals();toast(t('projectLoaded'))}
+function deleteProject(id){if(!confirm(t('confirmDeleteProject')))return;const all=loadProjects();delete all[id];localStorage.setItem(LS_PROJECTS,JSON.stringify(all));renderProjects();toast(t('projectDeleted'))}
+function newProject(){syncEditor();project=createBlankProject(t('newProjectDefault'));$('projectName').value=project.name;currentFile='main.html';selectedObjectId=null;selectedAssetId=null;dirty=true;renderAll();closeModals();switchView('editor')}
+function syncEditor(){if(currentFile&&project.files[currentFile])project.files[currentFile].content=$('codeEditor').value}
+function openFile(name){syncEditor();if(!project.files[name])return;currentFile=name;$('codeEditor').value=project.files[name].content;$('currentFileBadge').textContent=name;renderFiles();switchView('editor');updateCursor()}
+function inferType(name){const ext=name.split('.').pop().toLowerCase();return ext==='html'||ext==='htm'?'html':ext==='css'?'css':ext==='js'||ext==='mjs'?'js':'text'}
+function createFile(){let name=$('newFileName').value.trim();if(!name)return;if(project.files[name])return toast(t('fileExists'));let type=$('newFileType').value;if(!name.includes('.'))name+='.'+(type==='text'?'txt':(type==='javascript'?'js':type));project.files[name]={type:inferType(name),content:type==='css'?'/* '+t('newCssComment')+' */\n':(type==='js'||type==='javascript')?'// '+t('newJsComment')+'\n':type==='html'?'<div>'+t('newHtmlText')+'</div>\n':''};markDirty();renderFiles();openFile(name);closeModals()}
+function renameFile(name){if(!name||!project.files[name])return;const n=prompt(t('fileName'),name);if(!n||n===name)return;if(project.files[n])return toast(t('fileExists'));project.files[n]={...project.files[name],type:inferType(n)};delete project.files[name];if(currentFile===name)currentFile=n;markDirty();openFile(currentFile)}
+function removeFile(name){if(name==='main.html')return toast(t('cannotDeleteMain'));if(!confirm(t('confirmDelete')))return;delete project.files[name];if(currentFile===name)currentFile='main.html';markDirty();openFile(currentFile);renderFiles()}
+function iconFor(name){const type=inferType(name);return type==='html'?'🌐':type==='css'?'🎨':type==='js'?'JS':'📄'}
+function renderFiles(){const tree=$('fileTree');tree.innerHTML='';Object.keys(project.files).sort((a,b)=>a==='main.html'?-1:b==='main.html'?1:a.localeCompare(b)).forEach(name=>{const r=document.createElement('div');r.className='row'+(name===currentFile?' active':'');r.innerHTML=`<span>${iconFor(name)}</span><span class="name"></span><span class="meta">${inferType(name).toUpperCase()}</span><button class="kill">×</button>`;r.querySelector('.name').textContent=name;r.onclick=e=>{if(!e.target.classList.contains('kill'))openFile(name)};r.oncontextmenu=e=>{e.preventDefault();ctxFile=name;showCtx(e.clientX,e.clientY)};r.querySelector('.kill').onclick=e=>{e.stopPropagation();removeFile(name)};tree.appendChild(r)})}
+
+// Asset database: large image/model data stays local without filling localStorage.
+let db=null;
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open('RenderingEngineAssetsV1',1);r.onupgradeneeded=e=>e.target.result.createObjectStore('assets',{keyPath:'key'});r.onsuccess=e=>{db=e.target.result;res()};r.onerror=()=>rej(r.error)})}
+function assetStore(mode='readonly'){return db.transaction('assets',mode).objectStore('assets')}
+function putAsset(a){return new Promise((res,rej)=>{const r=assetStore('readwrite').put(a);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+function getProjectAssets(){return new Promise((res,rej)=>{const r=assetStore().getAll();r.onsuccess=()=>res(r.result.filter(a=>a.projectId===project.id));r.onerror=()=>rej(r.error)})}
+function deleteAsset(id){return new Promise((res,rej)=>{const r=assetStore('readwrite').delete(project.id+'::'+id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+async function handleAssets(files){for(const file of files){const id=uid(),ext=(file.name.split('.').pop()||'').toLowerCase(),kind=file.type.startsWith('image/')?'image':ext==='obj'?'obj':'file';const dataUrl=await readDataURL(file);let text='';if(kind==='obj'||['json','txt','gltf'].includes(ext)){try{text=await file.text()}catch(e){}}await putAsset({key:project.id+'::'+id,projectId:project.id,id,name:file.name,kind,type:file.type,size:file.size,dataUrl,text,createdAt:Date.now()});toast(t('assetAdded')+': '+file.name);log(t('assetLog')+': '+file.name,'ok')}renderAssets();markDirty()}
+function readDataURL(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>rej(fr.error);fr.readAsDataURL(file)})}
+async function renderAssets(){if(!db)return;const list=$('assetList');list.innerHTML='';const assets=await getProjectAssets();if(!assets.length){const d=document.createElement('div');d.className='emptyInspector';d.textContent=t('assetHelp');list.appendChild(d);return}assets.forEach(a=>{const r=document.createElement('div');r.className='row'+(selectedAssetId===a.id?' active':'');r.innerHTML=`<span>${a.kind==='image'?'🖼️':a.kind==='obj'?'🧊':'📦'}</span><span class="name"></span><span class="meta">${Math.max(1,Math.round(a.size/1024))} KB</span><button class="kill">×</button>`;r.querySelector('.name').textContent=a.name;r.onclick=e=>{if(!e.target.classList.contains('kill')){selectedAssetId=a.id;renderAssets();log(t('selectedAsset')+': '+a.name)}};r.querySelector('.kill').onclick=async e=>{e.stopPropagation();await deleteAsset(a.id);if(selectedAssetId===a.id)selectedAssetId=null;await renderAssets();markDirty()};list.appendChild(r)})}
+async function getAssetById(id){const all=await getProjectAssets();return all.find(a=>a.id===id)}
+
+function addCube(){const n={id:uid(),kind:'cube',name:'Cube '+(project.scene.filter(x=>x.kind==='cube').length+1),x:0,y:0,z:0,rx:0,ry:0,rz:0,s:1,color:'#7b61ff'};project.scene.push(n);selectedObjectId=n.id;markDirty();renderSceneList();renderInspector();drawScene()}
+async function addSpriteOrModel(){if(!selectedAssetId)return toast(t('selectImage'));const a=await getAssetById(selectedAssetId);if(!a)return;if(a.kind==='image'){const n={id:uid(),kind:'sprite',assetId:a.id,name:a.name,x:0,y:0,z:0,rx:0,ry:0,rz:0,s:1,color:'#ffffff'};project.scene.push(n);selectedObjectId=n.id}else if(a.kind==='obj'){const n={id:uid(),kind:'obj',assetId:a.id,name:a.name,x:0,y:0,z:0,rx:0,ry:0,rz:0,s:1,color:'#22d3ee'};project.scene.push(n);selectedObjectId=n.id}else return toast(t('objOnly'));markDirty();renderSceneList();renderInspector();drawScene()}
+function renderSceneList(){const list=$('sceneList');list.innerHTML='';project.scene.forEach(o=>{const r=document.createElement('div');r.className='row'+(o.id===selectedObjectId?' active':'');r.innerHTML=`<span>${o.kind==='cube'?'⬡':o.kind==='sprite'?'🖼️':'🧊'}</span><span class="name"></span><span class="meta">${o.kind}</span><button class="kill">×</button>`;r.querySelector('.name').textContent=o.name;r.onclick=e=>{if(!e.target.classList.contains('kill')){selectedObjectId=o.id;renderSceneList();renderInspector();drawScene()}};r.querySelector('.kill').onclick=e=>{e.stopPropagation();project.scene=project.scene.filter(x=>x.id!==o.id);if(selectedObjectId===o.id)selectedObjectId=null;markDirty();renderSceneList();renderInspector();drawScene()};list.appendChild(r)});$('sceneStats').textContent=project.scene.length+' '+t('objects')}
+function getSelectedObject(){return project.scene.find(x=>x.id===selectedObjectId)}
+function renderInspector(){const el=$('inspector'),o=getSelectedObject();if(!o){el.innerHTML='<div class="emptyInspector">'+t('selectObject')+'</div>';return}el.innerHTML=`
+<div class="field"><label>${t('name')}</label><input data-p="name" value="${escapeAttr(o.name)}"></div>
+<div class="field"><label>${t('position')}</label><div class="grid3"><input type="number" step="0.1" data-p="x" value="${o.x}"><input type="number" step="0.1" data-p="y" value="${o.y}"><input type="number" step="0.1" data-p="z" value="${o.z}"></div></div>
+<div class="field"><label>${t('rotation')}</label><div class="grid3"><input type="number" step="1" data-p="rx" value="${o.rx}"><input type="number" step="1" data-p="ry" value="${o.ry}"><input type="number" step="1" data-p="rz" value="${o.rz}"></div></div>
+<div class="field"><label>${t('scale')}</label><input type="number" min="0.05" step="0.1" data-p="s" value="${o.s}"></div>
+<div class="field"><label>${t('color')}</label><input type="color" data-p="color" value="${o.color||'#ffffff'}"></div>
+<div class="field"><label>${t('type')}</label><input value="${o.kind}" disabled></div>`;
+$$('#inspector [data-p]').forEach(inp=>inp.oninput=()=>{const p=inp.dataset.p;o[p]=p==='name'||p==='color'?inp.value:Number(inp.value);markDirty();renderSceneList();drawScene()})}
+function escapeAttr(s){return String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;')}
+
+// Tiny built-in wireframe renderer: intentionally dependency-free so the editor stays one HTML file.
+const canvas=$('sceneCanvas'),ctx=canvas.getContext('2d');
+function resizeCanvas(){const r=canvas.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);canvas.width=Math.max(1,Math.round(r.width*dpr));canvas.height=Math.max(1,Math.round(r.height*dpr));ctx.setTransform(dpr,0,0,dpr,0,0);drawScene()}
+function rot(v,rx,ry,rz){let [x,y,z]=v,ax=rx*Math.PI/180,ay=ry*Math.PI/180,az=rz*Math.PI/180;let c=Math.cos(ax),s=Math.sin(ax);[y,z]=[y*c-z*s,y*s+z*c];c=Math.cos(ay);s=Math.sin(ay);[x,z]=[x*c+z*s,-x*s+z*c];c=Math.cos(az);s=Math.sin(az);[x,y]=[x*c-y*s,x*s+y*c];return [x,y,z]}
+function project3(v,w,h){let [x,y,z]=v;let cy=Math.cos(camera.yaw),sy=Math.sin(camera.yaw),cp=Math.cos(camera.pitch),sp=Math.sin(camera.pitch);[x,z]=[x*cy-z*sy,x*sy+z*cy];[y,z]=[y*cp-z*sp,y*sp+z*cp];z+=camera.zoom;const f=Math.min(w,h)*.92/(z||.01);return [w/2+x*f,h/2-y*f,z]}
+const cubeVerts=[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]],cubeEdges=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+function drawGrid(w,h){if(!camera.showGrid)return;ctx.save();ctx.strokeStyle='#5f718630';ctx.lineWidth=1;for(let i=-10;i<=10;i++){drawWorldLine([i,0,-10],[i,0,10],w,h);drawWorldLine([-10,0,i],[10,0,i],w,h)}ctx.strokeStyle='#5ad9ff77';drawWorldLine([-10,0,0],[10,0,0],w,h);ctx.strokeStyle='#ff638577';drawWorldLine([0,0,-10],[0,0,10],w,h);ctx.restore()}
+function drawWorldLine(a,b,w,h){const p1=project3(a,w,h),p2=project3(b,w,h);if(p1[2]<=.1||p2[2]<=.1)return;ctx.beginPath();ctx.moveTo(p1[0],p1[1]);ctx.lineTo(p2[0],p2[1]);ctx.stroke()}
+async function drawScene(){const r=canvas.getBoundingClientRect(),w=r.width,h=r.height;if(!w||!h)return;ctx.clearRect(0,0,w,h);drawGrid(w,h);for(const o of project.scene){if(o.kind==='cube')drawCube(o,w,h);else if(o.kind==='obj')await drawObj(o,w,h);else if(o.kind==='sprite')await drawSprite(o,w,h)}if(!project.scene.length){ctx.fillStyle='#8ea1b8';ctx.font='14px Arial';ctx.textAlign='center';ctx.fillText(t('emptyScene'),w/2,h/2)}}
+function transformVert(v,o){const rr=rot([v[0]*o.s,v[1]*o.s,v[2]*o.s],o.rx,o.ry,o.rz);return [rr[0]+o.x,rr[1]+o.y,rr[2]+o.z]}
+function drawCube(o,w,h){const pts=cubeVerts.map(v=>project3(transformVert(v,o),w,h));ctx.save();ctx.strokeStyle=o.color||'#7b61ff';ctx.lineWidth=o.id===selectedObjectId?2.4:1.35;ctx.globalAlpha=o.id===selectedObjectId?1:.82;for(const [a,b] of cubeEdges){if(pts[a][2]<=.1||pts[b][2]<=.1)continue;ctx.beginPath();ctx.moveTo(pts[a][0],pts[a][1]);ctx.lineTo(pts[b][0],pts[b][1]);ctx.stroke()}ctx.restore()}
+const objCache=new Map();
+function parseOBJ(text){const vs=[],edges=new Set();for(const raw of text.split(/\r?\n/)){const line=raw.trim();if(line.startsWith('v ')){const p=line.split(/\s+/).slice(1,4).map(Number);if(p.every(Number.isFinite))vs.push(p)}else if(line.startsWith('f ')){const ids=line.split(/\s+/).slice(1).map(s=>parseInt(s.split('/')[0],10)-1).filter(Number.isFinite);for(let i=0;i<ids.length;i++){let a=ids[i],b=ids[(i+1)%ids.length];if(a>b)[a,b]=[b,a];edges.add(a+','+b)}}}let scale=1;if(vs.length){let m=0;for(const v of vs)m=Math.max(m,Math.abs(v[0]),Math.abs(v[1]),Math.abs(v[2]));if(m>0)scale=1/m}return {vs:vs.map(v=>v.map(n=>n*scale)),edges:[...edges].map(e=>e.split(',').map(Number))}}
+async function drawObj(o,w,h){const a=await getAssetById(o.assetId);if(!a||!a.text)return;if(!objCache.has(a.id))objCache.set(a.id,parseOBJ(a.text));const m=objCache.get(a.id),pts=m.vs.map(v=>project3(transformVert(v,o),w,h));ctx.save();ctx.strokeStyle=o.color||'#22d3ee';ctx.lineWidth=o.id===selectedObjectId?1.8:1;ctx.globalAlpha=.9;let count=0;for(const [i,j] of m.edges){if(++count>4500)break;const p=pts[i],q=pts[j];if(!p||!q||p[2]<=.1||q[2]<=.1)continue;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke()}ctx.restore()}
+async function drawSprite(o,w,h){const a=await getAssetById(o.assetId);if(!a)return;let im=imageCache.get(a.id);if(!im){im=new Image();im.src=a.dataUrl;imageCache.set(a.id,im);await new Promise(res=>{if(im.complete)res();else im.onload=res})}const p=project3([o.x,o.y,o.z],w,h);if(p[2]<=.1)return;const sz=Math.max(18,90*o.s/(p[2]/camera.zoom));ctx.save();ctx.globalAlpha=o.id===selectedObjectId?1:.85;ctx.drawImage(im,p[0]-sz/2,p[1]-sz/2,sz,sz);if(o.id===selectedObjectId){ctx.strokeStyle='#fff';ctx.strokeRect(p[0]-sz/2,p[1]-sz/2,sz,sz)}ctx.restore()}
+const scenePointers=new Map();let pinchStart=null;
+function pointerDistance(){const a=[...scenePointers.values()];if(a.length<2)return 0;return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}
+canvas.addEventListener('pointerdown',e=>{
+  scenePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  try{canvas.setPointerCapture(e.pointerId)}catch(err){}
+  if(scenePointers.size===1){drag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:camera.yaw,pitch:camera.pitch};pinchStart=null}
+  else if(scenePointers.size>=2){pinchStart={distance:pointerDistance(),zoom:camera.zoom};drag=null}
+});
+canvas.addEventListener('pointermove',e=>{
+  if(!scenePointers.has(e.pointerId))return;
+  scenePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(scenePointers.size>=2&&pinchStart){const d=Math.max(20,pointerDistance());camera.zoom=Math.max(1.8,Math.min(18,pinchStart.zoom*(pinchStart.distance/d)));drawScene();return}
+  if(drag&&drag.id===e.pointerId){camera.yaw=drag.yaw+(e.clientX-drag.x)*.008;camera.pitch=Math.max(-1.2,Math.min(1.2,drag.pitch+(e.clientY-drag.y)*.008));drawScene()}
+});
+function endScenePointer(e){scenePointers.delete(e.pointerId);pinchStart=null;if(scenePointers.size===1){const [id,p]=[...scenePointers.entries()][0];drag={id,x:p.x,y:p.y,yaw:camera.yaw,pitch:camera.pitch}}else drag=null}
+canvas.addEventListener('pointerup',endScenePointer);canvas.addEventListener('pointercancel',endScenePointer);
+canvas.addEventListener('wheel',e=>{e.preventDefault();camera.zoom=Math.max(1.8,Math.min(18,camera.zoom+e.deltaY*.006));drawScene()},{passive:false});
+
+function addRenderingEngineSplash(out){
+  if(out.includes('__rendering_engine_boot_splash__'))return out;
+  const splashStyle=`<style id="__rendering_engine_boot_style__">#__rendering_engine_boot_splash__{position:fixed!important;inset:0!important;z-index:2147483647!important;display:flex!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:24px!important;background:#05070d!important;color:#fff!important;font-family:Arial,Helvetica,sans-serif!important;font-size:clamp(34px,8vw,82px)!important;font-weight:900!important;line-height:1!important;letter-spacing:.04em!important;text-align:center!important;box-sizing:border-box!important}html.__rendering_engine_booting__ body>*:not(#__rendering_engine_boot_splash__){visibility:hidden!important}</style><script>document.documentElement.classList.add('__rendering_engine_booting__');<\/script>`;
+  const splashBody=`<div id="__rendering_engine_boot_splash__" role="status" aria-label="Rendering Engine">Rendering Engine</div><script>(()=>{setTimeout(()=>{document.documentElement.classList.remove('__rendering_engine_booting__');const splash=document.getElementById('__rendering_engine_boot_splash__');if(splash)splash.remove();const style=document.getElementById('__rendering_engine_boot_style__');if(style)style.remove()},4000)})();<\/script>`;
+  if(/<\/head>/i.test(out))out=out.replace(/<\/head>/i,splashStyle+'</head>');else out=splashStyle+out;
+  if(/<body\b[^>]*>/i.test(out))out=out.replace(/<body\b[^>]*>/i,m=>m+splashBody);else out+=splashBody;
+  return out;
+}
+function buildPreview(){syncEditor();let html=project.files['main.html']?.content||'<div id="app"></div>';const css=Object.entries(project.files).filter(([,f])=>f.type==='css').map(([n,f])=>`/* ${n} */\n${f.content}`).join('\n');const js=Object.entries(project.files).filter(([,f])=>f.type==='js').map(([n,f])=>`// ${n}\n${f.content}`).join('\n');const consoleBridge=`<script>(()=>{const send=(type,args)=>parent.postMessage({reConsole:true,type,args:args.map(x=>{try{return typeof x==='object'?JSON.stringify(x):String(x)}catch(e){return String(x)}})},'*');['log','warn','error'].forEach(k=>{const old=console[k];console[k]=(...a)=>{send(k,a);old(...a)}});window.onerror=(m,s,l,c,e)=>send('error',[m+' @ '+l+':'+c]);})();<\/script>`;let out=html;if(!/^\s*<!doctype|<html[\s>]/i.test(out))out='<!doctype html><html><head><meta charset="utf-8"></head><body>'+out+'</body></html>';const styleTag=`<style>${css}</style>`;out=out.replace(/<\/head>/i,styleTag+consoleBridge+'</head>');if(!/<\/head>/i.test(out))out=styleTag+consoleBridge+out;const scriptTag=`<script>${js.replace(/<\/script>/gi,'<\\/script>')}<\/script>`;out=out.replace(/<\/body>/i,scriptTag+'</body>');if(!/<\/body>/i.test(out))out+=scriptTag;return addRenderingEngineSplash(out)}
+function runPreview(){const html=buildPreview();$('previewFrame').srcdoc=html;switchView('preview');log('Project preview started','ok')}
+async function buildExportHTML(){syncEditor();const assets=await getProjectAssets();const amap={};for(const a of assets)amap[a.name]=a.dataUrl;let out=project.files['main.html']?.content||'<div id="app"></div>';if(!/^\s*<!doctype|<html[\s>]/i.test(out))out='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>'+out+'</body></html>';const css=Object.entries(project.files).filter(([,f])=>f.type==='css').map(([n,f])=>`/* ${n} */\n${f.content}`).join('\n');let js=Object.entries(project.files).filter(([,f])=>f.type==='js').map(([n,f])=>`// ${n}\n${f.content}`).join('\n');const assetJson=JSON.stringify(amap).replace(/<\/script>/gi,'<\\/script>');const sceneJson=JSON.stringify(project.scene).replace(/<\/script>/gi,'<\\/script>');const head=`\n<!-- Exported from Rendering Engine -->\n<style>${css}</style>\n<script>window.RENDERING_ENGINE_ASSETS=${assetJson};window.RENDERING_ENGINE_SCENE=${sceneJson};window.asset=(name)=>window.RENDERING_ENGINE_ASSETS[name]||'';<\/script>\n`;
+out=out.replace(/<\/head>/i,head+'</head>');if(!/<\/head>/i.test(out))out=head+out;out=out.replace(/<\/body>/i,`<script>${js.replace(/<\/script>/gi,'<\\/script>')}<\/script>\n</body>`);return addRenderingEngineSplash(out)}
+function openExportDialog(){syncEditor();openModal('exportModal')}
+async function copyExportHTML(){const html=await buildExportHTML();try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(html)}else{const ta=document.createElement('textarea');ta.value=html;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();if(!document.execCommand('copy'))throw new Error('copy failed');ta.remove()}toast(t('copied'));log(t('copyLog'),'ok');closeModals()}catch(e){toast(t('copyFailed'));log(t('copyFailLog')+': '+e.message,'error')}}
+async function downloadExportHTML(){const html=await buildExportHTML(),blob=new Blob([html],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=safeName($('projectName').value||'rendering-project')+'.html';document.body.appendChild(a);a.click();const fileName=a.download;a.remove();setTimeout(()=>URL.revokeObjectURL(url),800);toast(t('exported'));log(t('exportLog')+' '+fileName,'ok');closeModals()}
+function safeName(s){return s.trim().replace(/[^a-z0-9_\-]+/gi,'_').replace(/^_+|_+$/g,'')||'rendering-project'}
+function switchView(name){$$('.viewTab').forEach(b=>b.classList.toggle('active',b.dataset.view===name));$('editorView').classList.toggle('active',name==='editor');$('sceneView').classList.toggle('active',name==='scene');$('previewView').classList.toggle('active',name==='preview');updateMobileDock(name);if(isMobile())closeMobilePanels();if(name==='scene'){resizeCanvas();drawScene()}if(name==='preview'&&!$('previewFrame').srcdoc)runPreview()}
+function renderProjects(){const all=loadProjects(),box=$('projectCards');box.innerHTML='';const arr=Object.values(all).sort((a,b)=>b.updatedAt-a.updatedAt);if(!arr.length){box.innerHTML='<div class="emptyInspector">'+t('noProjects')+'</div>';return}arr.forEach(p=>{const d=document.createElement('div');d.className='projectCard';d.innerHTML=`<div class="info"><strong></strong><small>${new Date(p.updatedAt).toLocaleString(settings.lang==='tr'?'tr-TR':settings.lang==='ru'?'ru-RU':'en-US')}</small></div><button class="smallbtn open">${t('open')}</button><button class="smallbtn danger del">🗑 ${t('deleteProject')}</button>`;d.querySelector('strong').textContent=p.name;d.querySelector('.open').onclick=()=>loadProject(p.id);d.querySelector('.del').onclick=()=>deleteProject(p.id);box.appendChild(d)})}
+function renderAll(){renderFiles();if(project.files[currentFile]){$('codeEditor').value=project.files[currentFile].content;$('currentFileBadge').textContent=currentFile}renderSceneList();renderInspector();renderAssets();renderProjects();drawScene()}
+function openModal(id){$(id).classList.add('show')}
+function closeModals(){$$('.modal').forEach(m=>m.classList.remove('show'))}
+function showCtx(x,y){const c=$('ctx');c.style.display='block';c.style.left=Math.min(x,innerWidth-180)+'px';c.style.top=Math.min(y,innerHeight-100)+'px'}
+function hideCtx(){$('ctx').style.display='none'}
+function updateCursor(){const ta=$('codeEditor'),pre=ta.value.slice(0,ta.selectionStart),lines=pre.split('\n');$('cursorState').textContent=t('line')+' '+lines.length+', '+t('column')+' '+(lines.at(-1).length+1)}
+function isMobile(){return matchMedia('(max-width:720px)').matches}
+function updateMobileHints(){
+  const mobile=isMobile();
+  const oh=$('orbitHint'),zh=$('zoomHint');
+  if(oh)oh.textContent=mobile?t('orbitMobile'):t('orbitDesktop');
+  if(zh)zh.textContent=mobile?t('zoomMobile'):t('zoomDesktop');
+  if($('focusBtn'))$('focusBtn').title=t('focusScene');
+  if($('gridBtn'))$('gridBtn').title=t('toggleGrid');
+  if($('reloadPreviewBtn'))$('reloadPreviewBtn').title=t('reload');
+  if($('fullPreviewBtn'))$('fullPreviewBtn').title=t('fullscreen');
+}
+function closeMobilePanels(){
+  $('mobileLeftDrawer')?.classList.remove('mobile-open');
+  $('mobileRightDrawer')?.classList.remove('mobile-open');
+  $('mobileBackdrop')?.classList.remove('show');
+  $$('[data-mobile-action="files"],[data-mobile-action="inspector"]').forEach(b=>b.classList.remove('active'));
+}
+function openMobilePanel(which){
+  if(!isMobile())return;
+  const left=$('mobileLeftDrawer'),right=$('mobileRightDrawer'),back=$('mobileBackdrop');
+  const target=which==='files'?left:right;
+  const other=which==='files'?right:left;
+  const opening=!target.classList.contains('mobile-open');
+  other.classList.remove('mobile-open');target.classList.toggle('mobile-open',opening);back.classList.toggle('show',opening);
+  $$('[data-mobile-action="files"],[data-mobile-action="inspector"]').forEach(b=>b.classList.toggle('active',opening&&b.dataset.mobileAction===which));
+}
+function updateMobileDock(view){
+  $$('[data-mobile-view]').forEach(b=>b.classList.toggle('active',b.dataset.mobileView===view));
+}
+
+
+$('codeEditor').addEventListener('input',()=>{syncEditor();markDirty();updateCursor()});$('codeEditor').addEventListener('keyup',updateCursor);$('codeEditor').addEventListener('click',updateCursor);$('codeEditor').addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();const ta=e.target,s=ta.selectionStart,en=ta.selectionEnd;ta.setRangeText('  ',s,en,'end');syncEditor();markDirty()}});
+$('projectName').addEventListener('input',()=>{project.name=$('projectName').value;markDirty()});
+$('saveBtn').onclick=saveProject;$('runBtn').onclick=runPreview;$('exportBtn').onclick=openExportDialog;$('copyHtmlBtn').onclick=copyExportHTML;$('downloadHtmlBtn').onclick=downloadExportHTML;$('projectsBtn').onclick=()=>{renderProjects();openModal('projectsModal')};$('settingsBtn').onclick=()=>openModal('settingsModal');
+$('addFileBtn').onclick=()=>openModal('newFileModal');$('createFileBtn').onclick=createFile;$('renameFileBtn').onclick=()=>renameFile(currentFile);$('newProjectBtn').onclick=newProject;
+$('assetPickBtn').onclick=$('assetPickBtn2').onclick=()=>$('assetPicker').click();$('assetPicker').onchange=e=>handleAssets(e.target.files);
+const dz=$('dropzone');['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag')}));['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag')}));dz.addEventListener('drop',e=>handleAssets(e.dataTransfer.files));
+$('addCubeBtn').onclick=addCube;$('addSpriteBtn').onclick=addSpriteOrModel;$('focusBtn').onclick=()=>{camera={...camera,yaw:.65,pitch:.35,zoom:4.5};drawScene()};$('gridBtn').onclick=()=>{camera.showGrid=!camera.showGrid;drawScene()};
+$$('.viewTab').forEach(b=>b.onclick=()=>switchView(b.dataset.view));$('reloadPreviewBtn').onclick=runPreview;$('fullPreviewBtn').onclick=()=>$('previewFrame').requestFullscreen?.();
+$('clearConsoleBtn').onclick=()=>$('console').innerHTML='';
+$$('.modalClose').forEach(b=>b.onclick=closeModals);$$('.modal').forEach(m=>m.addEventListener('mousedown',e=>{if(e.target===m)closeModals()}));
+$('languageSelect').value=settings.lang;$('themeSelect').value=settings.theme;$('languageSelect').onchange=e=>{const next=e.target.value;if(i18n[next]){settings.lang=next;saveSettings();toast(t('language'))}};$('themeSelect').onchange=e=>{settings.theme=e.target.value;saveSettings()};
+$('ctxRename').onclick=()=>{hideCtx();renameFile(ctxFile)};$('ctxDelete').onclick=()=>{hideCtx();removeFile(ctxFile)};addEventListener('click',e=>{if(!e.target.closest('#ctx'))hideCtx()});
+$$('[data-mobile-view]').forEach(b=>b.onclick=()=>switchView(b.dataset.mobileView));
+$$('[data-mobile-close]').forEach(b=>b.onclick=closeMobilePanels);
+$('mobileBackdrop').onclick=closeMobilePanels;
+$$('[data-mobile-action="files"]').forEach(b=>b.onclick=()=>openMobilePanel('files'));
+$$('[data-mobile-action="inspector"]').forEach(b=>b.onclick=()=>openMobilePanel('inspector'));
+$$('[data-mobile-action="projects"]').forEach(b=>b.onclick=()=>{closeMobilePanels();renderProjects();openModal('projectsModal')});
+addEventListener('resize',()=>{resizeCanvas();updateMobileHints();if(!isMobile())closeMobilePanels()});addEventListener('message',e=>{if(e.data?.reConsole){const type=e.data.type==='error'?'err':e.data.type==='warn'?'warn':'';log(e.data.args.join(' '),type)}});
+addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();saveProject()}if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runPreview()}});
+setInterval(()=>{if(dirty){try{const draft={project,currentFile};localStorage.setItem('renderingEngineDraftV1',JSON.stringify(draft))}catch(e){}}},2500);
+
+(async function init(){applyTheme();applyLanguage();try{await openDB()}catch(e){db=null;console.warn('Rendering Engine: IndexedDB açılamadı, asset veritabanı devre dışı.',e)}let draft=null;try{draft=JSON.parse(localStorage.getItem('renderingEngineDraftV1')||'null')}catch(e){}if(draft?.project){project=draft.project;currentFile=draft.currentFile&&project.files[draft.currentFile]?draft.currentFile:'main.html';$('projectName').value=project.name;dirty=true}renderAll();resizeCanvas();log(t('renderingReady'),'ok');log(t('assetTip'),'warn')})();
+})();
+</script>
+</body>
+</html>
